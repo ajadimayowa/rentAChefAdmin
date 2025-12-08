@@ -1,12 +1,12 @@
 // src/api/axiosInstance.ts
 import axios from 'axios';
 
-const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api/v1';
+const baseURL = process.env.REACT_APP_API_BASE_URL
 
 const axiosInstance = axios.create({
   baseURL,
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
 });
 

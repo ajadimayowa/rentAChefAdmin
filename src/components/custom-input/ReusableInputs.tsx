@@ -18,7 +18,7 @@ interface CustomInputProps {
     style?: React.CSSProperties;
     icon?: string;
     icon2?: string;
-    maxInput?:number
+    maxInput?: number
 }
 
 const ReusableInputs: React.FC<CustomInputProps> = ({

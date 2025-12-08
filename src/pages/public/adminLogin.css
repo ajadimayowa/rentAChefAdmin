@@ -1,0 +1,41 @@
+.home-container {
+   display:flex; 
+   flex-direction:row;
+   min-height: 100vh;
+   
+}
+
+.home-container .left {
+  width: 60%;
+  padding: 3%;
+  background-image: url('../../assets/images/rentAChefhomeLeftBG.png');
+  background-position: center center;
+  background-size: contain;
+}
+
+.home-container .right {
+  padding: 3%;
+  width: 40%;
+  min-height: 600px;
+}
+
+.form-container{
+   min-height: 600px;
+}
+
+/* Example: for screens with max-width 768px */
+@media screen and (max-width: 768px) {
+  .home-container .left {
+    display: none;         /* fixed "dispaly" */
+    width: 60%;
+    padding: 3%;
+    background-image: url('../../assets/images/rentAChefhomeLeftBG.png');
+    background-position: center center;
+    background-size: contain;
+  }
+
+  .home-container .right {
+    padding: 3%;
+    width: 100%;
+  }
+}

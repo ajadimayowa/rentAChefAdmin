@@ -1,8 +1,8 @@
 // Theme Variables
-$primary: #1A5745;
-$secondary: #f9f9f9;
+$primary: #E2725B;
+$secondary: #FAFAFA;
 $light: #ffffff;
-$info: #ff5722;
+$info: #22daff;
 
 // Font Variables
 $font-base-size: 16px;
@@ -68,13 +68,11 @@ body {
   color: #333;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-top: 60px; // adjust if navbar is taller
   
 }
 
 // App Wrapper
 .App {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #F6F6F6;

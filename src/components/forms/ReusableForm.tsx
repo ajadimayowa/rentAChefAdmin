@@ -38,7 +38,7 @@ export function ReusableForm<T extends FormikValues>({
             }}
         >
             {({ handleSubmit }) => (
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit} className='w-100'>
                     {children}
                     {/* <div style={{ marginTop: 20 }}>
                         <Turnstile

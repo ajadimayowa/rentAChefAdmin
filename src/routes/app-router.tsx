@@ -15,6 +15,7 @@ import CategoryProductsPage from '../pages/public/CategoryProductsPage';
 import MyAds from '../pages/dashboard/MyAds';
 import UserSearchPage from '../pages/public/UserSearchPage';
 import AllAdsPage from '../pages/public/AllAdsPage';
+import AdminLoginPage from '../pages/public/AdminLogin';
 
 
 const AppRouter = () => {
@@ -22,7 +23,7 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public Routes: Accessible without authentication */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<AdminLoginPage />} />
         <Route path="/search" element={<ProductSearchPage />} />
         <Route path="/user-search" element={<UserSearchPage />} />
         <Route path='*' element={<NotFound/>}/>
