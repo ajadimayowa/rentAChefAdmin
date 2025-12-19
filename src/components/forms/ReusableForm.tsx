@@ -49,7 +49,7 @@ export function ReusableForm<T extends FormikValues>({
                     </div> */}
 
                     <CustomButton
-                        className="w-100 mt-3"
+                        className="w-100 mt-3 text-light"
                         title={buttonTitle}
                         type="submit"
                         loading={loading}

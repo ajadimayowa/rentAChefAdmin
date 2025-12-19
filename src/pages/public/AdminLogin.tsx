@@ -11,6 +11,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import api from "../../app/api";
+import { toast } from "react-toastify";
+import { setUserData } from "../../features/auth/authSlice";
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -21,17 +23,23 @@ const AdminLoginPage = () => {
 
     const [currentStep, setCurrentStep] = useState<number>(1);
 
-    const loginUser = async (values: any) => {
+    const loginAdmin = async (values: any) => {
         setLoading(true);
         try {
-            const res = await api.post("auth/login", values);
+            const res = await api.post("/admin/login", values);
             console.log("Login response:", res.data);
-            setUserEmail(values.email);
+            localStorage.setItem('userToken',res?.data?.token);
+            localStorage.setItem('userId',res?.data?.payload?.id);
+            dispatch(setUserData(res?.data?.payload))
+            navigate('/dashboard')
+            toast.success('Login Successful!')
+            // setUserEmail(values.email);
             setLoading(false);
-            setStep(2); // proceed to OTP verification
+            // setStep(2); // proceed to OTP verification
         } catch (error) {
             console.error(error);
             setLoading(false);
+             toast.error('Invalid Credentials')
         }
     };
 
@@ -58,12 +66,12 @@ const AdminLoginPage = () => {
             </div>
             <div className="right ">
                 <Image src={adminLogo} height={28} />
-                <div className="w-75 form-container d-flex p-4 align-items-center">
+                <div className="form-container d-flex p-4 align-items-center">
                     {
                         currentStep == 1 &&
                         <>
                             <ReusableForm
-                                onSubmit={() => console.log('ok')}
+                                onSubmit={loginAdmin}
                                 initialValues={{ email: '', password: '' }}
                                 validationSchema={loginSchema}
                                 loading={false}
@@ -73,9 +81,9 @@ const AdminLoginPage = () => {
                                     <h5 className="text-primary mb-5">
                                         Admin Login
                                     </h5>
-                                    <div>
+                                    {/* <div>
                                         <Badge onClick={() => setCurrentStep(2)} className="bg-info rounded p-2" role="button"> +Create New Chef</Badge>
-                                    </div>
+                                    </div> */}
                                 </div>
 
                                 <div>

@@ -199,7 +199,7 @@ const PostAdPage = () => {
             Object.entries(cleanValues).forEach(([key, value]) =>
                 formData.append(key, value as string)
             );
-            formData.append("sellerName", sellerData?.profile?.fullName)
+            // formData.append("sellerName", sellerData?.profile?.fullName)
 
             // ✅ Append images properly
             images.forEach((file) => formData.append("images", file));

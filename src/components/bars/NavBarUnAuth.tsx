@@ -5,6 +5,7 @@ import ogaselaLog from "../../assets/images/ogasela-logo.svg";
 import CustomButton from "../custom-button/custom-button";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/store";
+import compLogo from '../../assets/images/rentAChefAdminLogo.png'
 
 interface ITopBar {
     gotoProfile:()=>void;
@@ -19,24 +20,26 @@ const NavbarUnAuth:React.FC<ITopBar> = ({gotoProfile,gotToPostAd}) => {
     const donationUrl = process.env.REACT_APP_DONATION
 
     return (
-        <Navbar bg="light" expand="sm" fixed="top"  className="shadow-sm d-flex flex-column px-3 ">
-            <Container className="p-0">
+        <Navbar bg="light" expand="sm" className="shadow-sm d-flex flex-column px-3 ">
+            <Container className="d-flex p-0 align-items-center">
                 {/* Brand / Logo */}
-                <Navbar.Brand href="/">
-                    <Image src={ogaselaLog} alt="Ogasela Logo" height={32} />
-                </Navbar.Brand>
+                <span className="fw-bold align-items-center">Admin Portal</span>
 
-                <div className="d-flex align-items-center gap-2">
+                <div className="">
+                    <p className="p-0 m-0 fw-bold">{userProfile?.fullName}</p>
+                   <p className="p-0 m-0">Admin</p>
                    
-                    <a onClick={gotToPostAd} href="#">
-                        Post Ad
-                    </a>
-                    {userProfile?.profile.profilePicUrl && token?<Image role="button" onClick={gotoProfile} src={userProfile?.profile.profilePicUrl} height={30} style={{borderRadius:30}}/>:<i onClick={gotoProfile} className="bi bi-person-circle fs-2 text-primary" role="button"></i>}
+
+                    {/* <a onClick={gotToPostAd} href="#">
+                        Welcome
+                    </a> */}
+                    {/* {userProfile?.profile.profilePicUrl && token?<Image role="button" onClick={gotoProfile} src={userProfile?.profile.profilePicUrl} height={30} style={{borderRadius:30}}/>:<i onClick={gotoProfile} className="bi bi-person-circle fs-2 text-primary" role="button"></i>} */}
 
                     {/* <CustomButton
                 title=""
                 /> */}
                 </div>
+                
 
 
 
@@ -52,7 +55,6 @@ const NavbarUnAuth:React.FC<ITopBar> = ({gotoProfile,gotToPostAd}) => {
 
 
             </Container>
-            <small className="text-danger p-0 m-0">Support our journey <a  href={donationUrl || 'https://paystack.shop/pay/support-ogasela'}>click here</a> to donate</small>
         </Navbar>
     );
 };

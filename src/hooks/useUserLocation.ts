@@ -1,7 +1,7 @@
 // src/hooks/useUserLocation.ts
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { setUserLocation } from "../features/auth/authSlice";
+// import { setUserLocation } from "../features/auth/authSlice";
 import { getUserAddressGoogle } from "./useConvertUserCordintates";
 
 interface UserLocation {
@@ -29,7 +29,7 @@ export const useUserLocation = () => {
                     lat: position.coords.latitude,
                     lon: position.coords.longitude,
                 });
-                dispatch(setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude, }));
+                // dispatch(setUserLocation({ lat: position.coords.latitude, lon: position.coords.longitude, }));
                 
                 // setCurrentUserState(currentState)
                 setlocationLoading(false);

@@ -16,6 +16,7 @@ import MyAds from '../pages/dashboard/MyAds';
 import UserSearchPage from '../pages/public/UserSearchPage';
 import AllAdsPage from '../pages/public/AllAdsPage';
 import AdminLoginPage from '../pages/public/AdminLogin';
+import DashboardPage from '../pages/dashboard';
 
 
 const AppRouter = () => {
@@ -32,6 +33,7 @@ const AppRouter = () => {
         <Route path='/category/:categoryId' element={<CategoryProductsPage/>}/>
         
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
+        <Route index element={<DashboardPage/>} />
         <Route path="favorites" element={<FavoritesPage/>} />
         <Route path="post-ad" element={<PostAdPage/>} />
         <Route path='ads' element={<MyAds/>} />

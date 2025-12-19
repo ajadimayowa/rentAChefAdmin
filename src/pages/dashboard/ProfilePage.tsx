@@ -18,7 +18,7 @@ import ReusableInputs from '../../components/custom-input/ReusableInputs';
 import LoginModal from '../../components/modals/auth/LoginModal';
 import AuthenticationModal from '../../components/modals/auth/AuthModal';
 import SignUpModal from '../../components/modals/auth/SignUpModal';
-import { IUser, IUserData } from '../../features/auth/authSlice';
+// import { IUser, IUserData } from '../../features/auth/authSlice';
 import IconButton from '../../components/custom-button/IconButton';
 import { persistor, RootState } from '../../store/store';
 import moment from 'moment';
@@ -57,7 +57,7 @@ const UserProfilePage = () => {
     const [signUpModal, setSignUpModal] = useState(false);
     const token = localStorage.getItem('userToken') || '';
     const userId = localStorage.getItem('userId') || '';
-    const [userData, setUserData] = useState<IUser>();
+    const [userData, setUserData] = useState<any>();
     const [updateProfileModal,setUpdateProfileModal] = useState(false)
     // const userProfile = userData?userData: useSelector((user:RootState)=>user.auth.userProfile)
     const userProfile = userData

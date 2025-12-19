@@ -22,14 +22,14 @@ const ViewAdPage = () => {
     const [loading, setLoading] = useState(false);
     const [adInfo, setAdInfo] = useState<IAd>();
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [showCont,setShowCont] = useState(true);
+    const [showCont, setShowCont] = useState(true);
     const navigate = useNavigate();
     const [openInfo, setOpenInfo] = useState(false);
 
     const [authModal, setAuthModal] = useState(false);
     const [loginModal, setLoginModal] = useState(false);
     const [signUpModal, setSignUpModal] = useState(false);
-    const user = useSelector((user:RootState)=>user.auth.userProfile)
+    const user = useSelector((user: RootState) => user.auth.userProfile)
 
     const handleCheckAuth = (path: string) => {
         const token = localStorage.getItem("userToken") || "";
@@ -46,14 +46,14 @@ const ViewAdPage = () => {
         setAuthModal(false);
     };
 
-    const handlePaymentUodate = async (refNum:any)=>{
+    const handlePaymentUodate = async (refNum: any) => {
         setLoading(true);
         try {
-            const res = await api.post(`ad/update-payment`,{
-                adId:id,
-                reference:refNum?.reference
+            const res = await api.post(`ad/update-payment`, {
+                adId: id,
+                reference: refNum?.reference
             });
-            toast.success(res?.data?.message || 'Payment completed, awaiting review!') ;
+            toast.success(res?.data?.message || 'Payment completed, awaiting review!');
             setLoading(false);
             navigate('/dashboard/ads')
         } catch (error) {
@@ -96,39 +96,39 @@ const ViewAdPage = () => {
                 gotToPostAd={() => handleCheckAuth("/dashboard/post-ad")}
             />
             <div className="bg-primary py-5 p-2 d-flex gap-2 align-items-center">
-        <IconButton className="d-flex gap-2 bg-light text-dark" onClick={() => navigate(-1)} icon="bi bi-chevron-left" title="Back" />
-        {/* <Button
+                <IconButton className="d-flex gap-2 bg-light text-dark" onClick={() => navigate(-1)} icon="bi bi-chevron-left" title="Back" />
+                {/* <Button
           variant="fw-bold border bg-light"
           onClick={}
         >
           Go Back
         </Button> */}
-      </div>
-      <div className="bg-danger">
-                    <div className='d-flex justify-content-between p-2 align-items-center text-light'>
-                        <p className='text-light fw-bold p-0 m-0'>Warning!</p>
-                        <Button
-                            onClick={() => setOpenInfo(!openInfo)}
-                            aria-controls="collapse-content"
-                            className='p-0 text-light'
-                            variant="outline"
-                        >
-                            {openInfo ? "Hide" : "Show"}
-                        </Button>
+            </div>
+            <div className="bg-danger">
+                <div className='d-flex justify-content-between p-2 align-items-center text-light'>
+                    <p className='text-light fw-bold p-0 m-0'>Warning!</p>
+                    <Button
+                        onClick={() => setOpenInfo(!openInfo)}
+                        aria-controls="collapse-content"
+                        className='p-0 text-light'
+                        variant="outline"
+                    >
+                        {openInfo ? "Hide" : "Show"}
+                    </Button>
 
-                    </div>
-
-                    <Collapse in={openInfo}>
-                        <div id="collapse-content" className="mt-3 p-3 border rounded bg-danger text-light">
-                            <p className='text-light p-0 m-0'>
-                                Please stay safe when buying from ogasela.
-                            </p>
-                            <p className='text-light p-0 m-0'>
-                               Verify the genuines before sending money!
-                            </p>
-                        </div>
-                    </Collapse>
                 </div>
+
+                <Collapse in={openInfo}>
+                    <div id="collapse-content" className="mt-3 p-3 border rounded bg-danger text-light">
+                        <p className='text-light p-0 m-0'>
+                            Please stay safe when buying from ogasela.
+                        </p>
+                        <p className='text-light p-0 m-0'>
+                            Verify the genuines before sending money!
+                        </p>
+                    </div>
+                </Collapse>
+            </div>
             <Container className="my-4">
                 {loading ? (
                     <div className="text-center my-5">
@@ -136,9 +136,9 @@ const ViewAdPage = () => {
                     </div>
                 ) : (
                     <>
-                    {/* === Main Carousel === */}
-                        
-                      
+                        {/* === Main Carousel === */}
+
+
                         <Carousel
                             activeIndex={selectedIndex}
                             onSelect={(selected) => setSelectedIndex(selected)}
@@ -192,31 +192,31 @@ const ViewAdPage = () => {
                                 </div>
                             ))}
                         </div>
-<div className="d-flex text-center w-100 justify-content-center mt-5">
-    
-     {
-                                    user.profile.fullName == adInfo?.sellerName && !adInfo.promotionType.paymentCompleted &&
-                                   <PaystackPayment
-    
-        email="customer@email.com"
-        amount={adInfo.promotionType.price}
-        onSuccess={(ref) => handlePaymentUodate(ref)}
-        onClose={() => console.log("Payment closed")}
-      />
-                                }
-</div>
+                        <div className="d-flex text-center w-100 justify-content-center mt-5">
+
+                            {
+                                user.fullName == adInfo?.sellerName &&
+                                <PaystackPayment
+
+                                    email="customer@email.com"
+                                    amount={adInfo.promotionType.price}
+                                    onSuccess={(ref) => handlePaymentUodate(ref)}
+                                    onClose={() => console.log("Payment closed")}
+                                />
+                            }
+                        </div>
                         {/* === Ad Info Section === */}
                         <div className="mt-3">
                             <div className="d-flex justify-content-between align-items-center">
-                               
+
                                 <p className="text-muted mb-0">
                                     {/* {ad.location} • {ad.views} */}
                                 </p>
                                 {
-                                   adInfo&&adInfo.promotionType.paymentCompleted &&
+                                    adInfo && adInfo.promotionType.paymentCompleted &&
                                     <Badge bg="warning" text="dark">
-                                    Promoted
-                                </Badge>
+                                        Promoted
+                                    </Badge>
                                 }
                             </div>
                             <p className="text-secondary mt-1">
@@ -263,34 +263,34 @@ const ViewAdPage = () => {
                                 </Col>
                                 <Col md={4}>
                                     <p>
-                                        <strong role="button" className="p-2 rounded bg-info text-light" onClick={()=>setShowCont(!showCont)}>Show Contact:</strong> {showCont?'+234********':`+234${adInfo?.seller?.contact?.phoneNumber}`}
+                                        <strong role="button" className="p-2 rounded bg-info text-light" onClick={() => setShowCont(!showCont)}>Show Contact:</strong> {showCont ? '+234********' : `+234${adInfo?.seller?.contact?.phoneNumber}`}
                                     </p>
                                 </Col>
                                 <Col md={4}>
                                     <p>
-                                        <strong>Address:</strong> {showCont?'locat********':adInfo?.location.address}
+                                        <strong>Address:</strong> {showCont ? 'locat********' : adInfo?.location.address}
                                     </p>
                                 </Col>
 
                                 <Col md={4} >
-                                <Link to={'https://wa.me/message/YLK4QJBSIGZ5M1'}>
-<div className="d-flex gap-2 text-primary" role="button">
-                                     <i className="bi bi-whatsapp"></i>
-                                    <p className="text-primary">
-                                        <strong>Whatsapp Message</strong>
-                                    </p>
-                                </div>
-                                </Link>
-                                
-                                
+                                    <Link to={'https://wa.me/message/YLK4QJBSIGZ5M1'}>
+                                        <div className="d-flex gap-2 text-primary" role="button">
+                                            <i className="bi bi-whatsapp"></i>
+                                            <p className="text-primary">
+                                                <strong>Whatsapp Message</strong>
+                                            </p>
+                                        </div>
+                                    </Link>
+
+
                                 </Col>
-                               
+
                             </Row>
                         </Card>
                     </>
                 )}
 
-                  
+
             </Container>
 
             {/* === Bottom Navbar & Auth Modals === */}
