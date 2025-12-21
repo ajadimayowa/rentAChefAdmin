@@ -1,5 +1,5 @@
 {
-  "name": "rentachefbox",
+  "name": "relmpayfrontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -47,6 +47,7 @@
     "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },
+  "engines": { "node": "24.x" },
   "scripts": {
     "start": "react-scripts start",
     "build": "CI=false react-scripts build",

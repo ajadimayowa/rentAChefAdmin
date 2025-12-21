@@ -13,6 +13,8 @@ import { useDispatch } from "react-redux";
 import api from "../../app/api";
 import { toast } from "react-toastify";
 import { setUserData } from "../../features/auth/authSlice";
+import { loadStates } from "../../utils/helpers";
+import relmpayLogo from '../../assets/images/relmpayLogo.png'
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -28,8 +30,9 @@ const AdminLoginPage = () => {
         try {
             const res = await api.post("/admin/login", values);
             console.log("Login response:", res.data);
-            localStorage.setItem('userToken',res?.data?.token);
-            localStorage.setItem('userId',res?.data?.payload?.id);
+            loadStates()
+            localStorage.setItem('userToken', res?.data?.token);
+            localStorage.setItem('userId', res?.data?.payload?.id);
             dispatch(setUserData(res?.data?.payload))
             navigate('/dashboard')
             toast.success('Login Successful!')
@@ -39,7 +42,7 @@ const AdminLoginPage = () => {
         } catch (error) {
             console.error(error);
             setLoading(false);
-             toast.error('Invalid Credentials')
+            toast.error('Invalid Credentials')
         }
     };
 
@@ -53,163 +56,66 @@ const AdminLoginPage = () => {
             .required("Password is required"),
     });
     return (
-        <div className="home-container">
-            <div className="left">
-                <h3 style={{ fontWeight: '900', fontSize: '28px' }}>
-                    Fine Dining At Your
-                    Door step.
-                </h3>
-                <div className="w-100 d-flex align-items-center justify-content-center">
-                    <Image src={ownerImg} />
-                </div>
-
-            </div>
-            <div className="right ">
-                <Image src={adminLogo} height={28} />
-                <div className="form-container d-flex p-4 align-items-center">
-                    {
-                        currentStep == 1 &&
-                        <>
-                            <ReusableForm
-                                onSubmit={loginAdmin}
-                                initialValues={{ email: '', password: '' }}
-                                validationSchema={loginSchema}
-                                loading={false}
-                                buttonTitle="Login"
-                            >
-                                <div className="d-flex flex-row justify-content-between">
-                                    <h5 className="text-primary mb-5">
-                                        Admin Login
-                                    </h5>
-                                    {/* <div>
+        <div className="login-container p-5">
+            <div className="w-100 d-flex justify-content-center">
+                <div className="bg-light w-25 rounded p-3">
+                    <ReusableForm
+                        onSubmit={loginAdmin}
+                        initialValues={{ email: '', password: '' }}
+                        validationSchema={loginSchema}
+                        loading={false}
+                        buttonTitle="Login"
+                    >
+                        <div className="d-flex flex-row justify-content-between">
+                            <div className="w-100 d-flex justify-content-center">
+                                <Image src={relmpayLogo} height={84} />
+                            </div>
+                            {/* <div>
                                         <Badge onClick={() => setCurrentStep(2)} className="bg-info rounded p-2" role="button"> +Create New Chef</Badge>
                                     </div> */}
-                                </div>
+                        </div>
 
-                                <div>
-                                    <ReusableInputs
-                                        name="email"
-                                        inputType="text-input"
-                                        id="email"
-                                        label="Enter Email"
-                                        placeholder="Email"
-                                    />
-                                    <ErrorMessage
-                                        name="email"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
+                        <div>
+                            <ReusableInputs
+                                name="email"
+                                inputType="text-input"
+                                id="email"
+                                label=""
+                                placeholder="Enter Email"
+                            />
+                            <ErrorMessage
+                                name="email"
+                                component="div"
+                                className="text-danger small mt-1"
+                            />
+                        </div>
 
-                                <div>
-                                    <ReusableInputs
-                                        icon2="bi bi-eye-slash-fill"
-                                        name="password"
-                                        inputType="password"
-                                        id="password"
-                                        label="Enter Password"
-                                        placeholder="Password"
-                                    />
-                                    <ErrorMessage
-                                        name="password"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
-
-
-                            </ReusableForm>
-                        </>
-                    }
-
-                    {
-                        currentStep == 2 &&
-                        <>
-                            <ReusableForm
-                                onSubmit={() => console.log('ok')}
-                                initialValues={{ email: '', password: '' }}
-                                validationSchema={loginSchema}
-                                loading={false}
-                                buttonTitle="Login"
-                            >
-                                <div className="d-flex flex-row justify-content-between">
-                                    <h5 className="text-primary mb-5">
-                                        Create New Chef
-                                    </h5>
-                                    <div>
-                                        <Badge onClick={() => setCurrentStep(1)} className="bg-info rounded p-2" role="button">Admin Login</Badge>
-                                    </div>
-                                </div>
+                        <div>
+                            <ReusableInputs
+                                icon2="bi bi-eye-slash-fill"
+                                name="password"
+                                inputType="password"
+                                id="password"
+                                label=""
+                                placeholder="Password"
+                            />
+                            <ErrorMessage
+                                name="password"
+                                component="div"
+                                className="text-danger small mt-1"
+                            />
+                        </div>
 
 
-                                <div>
-                                    <ReusableInputs
-                                        name="staffId"
-                                        inputType="text-input"
-                                        id="staffId"
-                                        label="Staff ID"
-                                        placeholder="Enter staff id"
-                                    />
-                                    <ErrorMessage
-                                        name="staffId"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
-
-
-                                 <div>
-                                    <ReusableInputs
-                                        name="name"
-                                        inputType="text-input"
-                                        id="name"
-                                        label="Full Name"
-                                        placeholder="Enter fullname"
-                                    />
-                                    <ErrorMessage
-                                        name="nmae"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
-
-                                <div>
-                                    <ReusableInputs
-                                        name="name"
-                                        inputType="text-input"
-                                        id="name"
-                                        label="Gender"
-                                        placeholder="Enter fullname"
-                                    />
-                                    <ErrorMessage
-                                        name="gender"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
-
-                                <div>
-                                    <ReusableInputs
-                                        name="email"
-                                        inputType="text-input"
-                                        id="email"
-                                        label="Staff Email"
-                                        placeholder="Enter email"
-                                    />
-                                    <ErrorMessage
-                                        name="gender"
-                                        component="div"
-                                        className="text-danger small mt-1"
-                                    />
-                                </div>
-
-
-                            </ReusableForm>
-                        </>
-                    }
-
+                    </ReusableForm>
                 </div>
+            </div>
 
+            <div className="w-100 d-flex justify-content-center mt-5">
+                <p role="button" className="text-light">New User? Create Account</p>
+            </div>
+            <div className="w-100 d-flex justify-content-center">
+                <p role="button" className="text-light">Forgot password?</p>
             </div>
 
         </div>

@@ -27,25 +27,25 @@ const DashboardLayout: React.FC = () => {
             id:'2',
             label:'Admins',
             icon:'bi bi-person-workspace',
-            path:'/admin'
+            path:'/dashboard/admins'
         },
         {
             id:'3',
             label:'Chefs',
             icon:'bi bi-backpack',
-            path:'/chefs'
+            path:'/dashboard/chefs'
         },
         {
             id:'4',
             label:'Customers',
             icon:'bi bi-person-add',
-            path:'/customers'
+            path:'/dashboard/customers'
         },
         {
             id:'5',
             label:'Settings',
             icon:'bi bi-gear',
-            path:'/settings'
+            path:'/dashboard/settings'
         },
     ]
 
@@ -82,7 +82,7 @@ const DashboardLayout: React.FC = () => {
                         <Image src={compLogo} height={150} /> 
                         <ul className="w-100 text-light m-0 p-0">
                             {
-                                guides.map((link)=>(<li className={`d-flex gap-3 p-3 ${link.path==currentPath?'bg-light text-dark':''}`}><i className={link.icon}></i><span role="button" className="">{link.label}</span></li>))
+                                guides.map((link)=>(<li onClick={()=>navigate(link.path)} className={`d-flex gap-3 p-3 ${link.path==currentPath?'bg-light text-dark':''}`}><i className={link.icon}></i><span role="button" className="">{link.label}</span></li>))
                             }
                             <li role="button" onClick={()=>{localStorage.clear(); navigate('/')}} className="d-flex gap-3 p-3 mt-5"><i className="bi bi-box-arrow-left"></i> Logout</li>
                         </ul>
