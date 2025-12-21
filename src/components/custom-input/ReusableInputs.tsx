@@ -108,6 +108,31 @@ const ReusableInputs: React.FC<CustomInputProps> = ({
                     />
                 );
 
+            case "radio-button":
+                return (
+                    <div className="d-flex gap-3">
+                        <label className="d-flex align-items-center gap-2">
+                            <Field
+                                type="radio"
+                                name={name}
+                                value="m"
+                                disabled={disabled}
+                            />
+                            Male
+                        </label>
+
+                        <label className="d-flex align-items-center gap-2">
+                            <Field
+                                type="radio"
+                                name={name}
+                                value="f"
+                                disabled={disabled}
+                            />
+                            Female
+                        </label>
+                    </div>
+                );
+
             default:
                 return (
                     <Field

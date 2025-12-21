@@ -17,6 +17,10 @@ import UserSearchPage from '../pages/public/UserSearchPage';
 import AllAdsPage from '../pages/public/AllAdsPage';
 import AdminLoginPage from '../pages/public/AdminLogin';
 import DashboardPage from '../pages/dashboard';
+import AdminPage from '../pages/dashboard/AdminsPage';
+import ChefsPage from '../pages/dashboard/ChefsPage';
+import CustomersPage from '../pages/dashboard/CustomersPage';
+import SettingsPage from '../pages/dashboard/SettingsPage';
 
 
 const AppRouter = () => {
@@ -34,11 +38,10 @@ const AppRouter = () => {
         
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
         <Route index element={<DashboardPage/>} />
-        <Route path="favorites" element={<FavoritesPage/>} />
-        <Route path="post-ad" element={<PostAdPage/>} />
-        <Route path='ads' element={<MyAds/>} />
-        <Route path="messages" element={<MessagesPage/>} />
-        <Route path="profile" element={<UserProfilePage/>} />
+        <Route path="admins" element={<AdminPage/>} />
+        <Route path="chefs" element={<ChefsPage/>} />
+        <Route path='customers' element={<CustomersPage/>} />
+        <Route path="settings" element={<SettingsPage/>} />
 
         </Route>
       </Routes>

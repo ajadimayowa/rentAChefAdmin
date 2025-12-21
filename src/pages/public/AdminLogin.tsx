@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import api from "../../app/api";
 import { toast } from "react-toastify";
 import { setUserData } from "../../features/auth/authSlice";
+import { loadStates } from "../../utils/helpers";
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ const AdminLoginPage = () => {
         try {
             const res = await api.post("/admin/login", values);
             console.log("Login response:", res.data);
+            loadStates()
             localStorage.setItem('userToken',res?.data?.token);
             localStorage.setItem('userId',res?.data?.payload?.id);
             dispatch(setUserData(res?.data?.payload))
