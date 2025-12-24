@@ -1,0 +1,7 @@
+.sidebar {
+  width: 260px;
+}
+
+.nav-link.active {
+  font-weight: 600;
+}

@@ -10,7 +10,7 @@ const SettingsPage= () => {
     const infoCardData = [
         {
             id: '1',
-            label: 'Revenue',
+            label: 'Account',
             desc: 'Total revenue',
             icon: 'bi bi-speedometer2',
             path: '/dashboard',
@@ -19,17 +19,17 @@ const SettingsPage= () => {
         },
         {
             id: '2',
-            label: 'Customers',
+            label: 'User',
             desc: 'No of active customers',
-            icon: 'bi bi-person-workspace',
+            icon: 'bi bi-people-fill',
             path: '/admin',
             count: '3'
         },
         {
             id: '3',
-            label: 'Chefs',
+            label: 'Notifications',
             desc: 'No of active chefs',
-            icon: 'bi bi-backpack',
+            icon: 'bi bi-bell-fill',
             path: '/chefs',
             count: '2'
         }
@@ -37,30 +37,24 @@ const SettingsPage= () => {
     ]
     return (
         <div>
-            <div className="d-flex justify-content-end">
+            {/* <div className="d-flex justify-content-end">
                 <CustomIconButton onClick={()=>setOnCreateChef(true)} className="text-light" title="Create New Chef"/>
 
-            </div>
+            </div> */}
             <Row className="mt-4">
 
                 {
                     infoCardData.map((card) => (<Col>
-                        <Card>
+                        <Card className="rounded-3">
                             <Card.Body>
                                 <p className="fw-bold m-0 p-0">
                                     {
                                         card.label
                                     }
                                 </p>
-                                <p>
-                                    {
-                                        card.desc
-                                    }
-                                </p>
                                 <h3>
-                                    {
-                                        card.isMoney?convertToThousand(card.count):card.count
-                                    }
+                                    <i className={card.icon}></i>
+                                  
                                 </h3>
 
                             </Card.Body>

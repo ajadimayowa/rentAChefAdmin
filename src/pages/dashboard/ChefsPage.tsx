@@ -1,4 +1,4 @@
-import { Button, Card, Col, Row } from "react-bootstrap"
+import { Button, Card, Col, Row, Spinner } from "react-bootstrap"
 import { convertToThousand } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
@@ -56,8 +56,8 @@ const ChefsPage = () => {
             setChefs(res?.data?.payload)
             console.log("chefs:", res.data);
             // loadStates()
-            localStorage.setItem('userToken',res?.data?.token);
-            localStorage.setItem('userId',res?.data?.payload?.id);
+            // localStorage.setItem('userToken',res?.data?.token);
+            // localStorage.setItem('userId',res?.data?.payload?.id);
             // dispatch(setUserData(res?.data?.payload))
             // navigate('/dashboard')
             // toast.success('Login Successful!')
@@ -109,22 +109,25 @@ const ChefsPage = () => {
                     <thead className="thead-light">
                         <tr>
                             <th className="bg-primary text-light" scope="col">#</th>
-                            <th className="bg-primary text-light" scope="col">Staff ID</th>
+                            <th className="bg-primary text-light" scope="col">Chef ID</th>
                             <th className="bg-primary text-light" scope="col">Full name</th>
                             <th className="bg-primary text-light" scope="col">State</th>
                             <th className="bg-primary text-light" scope="col">Location</th>
                             <th className="bg-primary text-light" scope="col">Created At</th>
+                            <th className="bg-primary text-light"></th>
                         </tr>
                     </thead>
                     <tbody>
+                        <tr><td colSpan={4}>{loading && <Spinner/>}</td></tr>
                         {
-                            chefs.map((chef,index:number)=>(<tr>
+                            chefs.map((chef,index:number)=>(<tr onClick={()=>navigate(`/dashboard/chef/${chef?.id}`)}>
                             <th scope="row">{index+1}</th>
                             <td>{chef?.staffId}</td>
                             <td>{chef?.name}</td>
                             <td>{chef?.state}</td>
                             <td>{chef?.location}</td>
                             <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
+                            <td><i className="bi bi-three-dots-vertical"></i></td>
                         </tr>))
                         }
                     </tbody>

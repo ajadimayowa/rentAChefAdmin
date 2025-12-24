@@ -1,12 +1,25 @@
-import { Button, Card, Col, Row } from "react-bootstrap"
+import { Button, Card, Col, Row, Spinner } from "react-bootstrap"
 import { convertToThousand } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import ReusableInputs from "../../components/custom-input/ReusableInputs"
+import { Form, Formik } from "formik"
+import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux"
+import api from "../../app/api"
+import { toast } from "react-toastify"
+import moment from "moment"
 
-const AdminPage = () => {
-    const [onCreateChef,setOnCreateChef] = useState(false)
+const AdminsPage = () => {
+    const [onCreateChef, setOnCreateChef] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [step, setStep] = useState(1);
+    const [userEmail, setUserEmail] = useState("");
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [admins,setAdmins] = useState<any[]>([])
     const infoCardData = [
         {
             id: '1',
@@ -15,7 +28,7 @@ const AdminPage = () => {
             icon: 'bi bi-speedometer2',
             path: '/dashboard',
             count: '5',
-            isMoney:true
+            isMoney: true
         },
         {
             id: '2',
@@ -35,41 +48,89 @@ const AdminPage = () => {
         }
 
     ]
+
+    const fetchAdmin = async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/admin/admins");
+            setAdmins(res?.data?.data)
+            console.log("chefs:", res.data);
+            // loadStates()
+            // localStorage.setItem('userToken',res?.data?.token);
+            // localStorage.setItem('userId',res?.data?.payload?.id);
+            // dispatch(setUserData(res?.data?.payload))
+            // navigate('/dashboard')
+            // toast.success('Login Successful!')
+            // setUserEmail(values.email);
+            setLoading(false);
+            // setStep(2); // proceed to OTP verification
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+             toast.error('Invalid Credentials')
+        }
+    };
+
+    useEffect(()=>{
+        fetchAdmin()
+    },[])
     return (
         <div>
-            <div className="d-flex justify-content-end">
-                <CustomIconButton onClick={()=>setOnCreateChef(true)} className="text-light" title="Create New Chef"/>
+            <div className="">
+                <h5>All Admin</h5>
+                <p>Manage your admins here.</p>
+
 
             </div>
-            <Row className="mt-4">
+            <div className="mt-5">
+                <div className="w-100 d-flex justify-content-between mb-4">
+                    <div>
+                        <Formik
+                            initialValues={{ 'userSearch': '' }}
+                            onSubmit={() => console.log('ok')}
+                        >
+                            {
+                                ({ handleSubmit }) => (
+                                    <Form onSubmit={handleSubmit}>
+                                        <ReusableInputs placeholder="Search by name..." inputType="text-input" id="searchChef" name="searchChef" />
+                                    </Form>
+                                )
+                            }
 
-                {
-                    infoCardData.map((card) => (<Col>
-                        <Card>
-                            <Card.Body>
-                                <p className="fw-bold m-0 p-0">
-                                    {
-                                        card.label
-                                    }
-                                </p>
-                                <p>
-                                    {
-                                        card.desc
-                                    }
-                                </p>
-                                <h3>
-                                    {
-                                        card.isMoney?convertToThousand(card.count):card.count
-                                    }
-                                </h3>
+                        </Formik>
 
-                            </Card.Body>
-                        </Card>
-                    </Col>))
-                }
-            </Row>
-<NewChefModal on={onCreateChef} off={()=>setOnCreateChef(false) } onLogin={()=>console.log('ok')}/>
+
+                    </div>
+                    <div></div>
+
+                </div>
+
+                <table className="table">
+                    <thead className="thead-light">
+                        <tr>
+                            <th className="bg-primary text-light" scope="col">#</th>
+                            <th className="bg-primary text-light" scope="col">Full name</th>
+                            <th className="bg-primary text-light" scope="col">Created At</th>
+                            <th className="bg-primary text-light"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colSpan={4}>{loading && <Spinner/>}</td></tr>
+                        {
+                            admins.map((chef,index:number)=>(<tr 
+                            // onClick={()=>navigate(`/dashboard/chef/${chef?.id}`)}
+                            >
+                            <th scope="row">{index+1}</th>
+                            <td>{chef?.fullName}</td>
+                            <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
+                            <td><i className="bi bi-three-dots-vertical"></i></td>
+                        </tr>))
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <NewChefModal on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
         </div>
     )
 }
-export default AdminPage
+export default AdminsPage

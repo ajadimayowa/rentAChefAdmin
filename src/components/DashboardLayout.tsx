@@ -7,7 +7,9 @@ import AuthenticationModal from "./modals/auth/AuthModal";
 import LoginModal from "./modals/auth/LoginModal";
 import SignUpModal from "./modals/auth/SignUpModal";
 import { Button, Image, NavItem } from "react-bootstrap";
-import compLogo from '../assets/images/rentAChefLogoLight.png'
+import compLogo from '../assets/images/rentAChefLogoLight.png';
+import './sidebar.css';
+import ReusableSideBar from "./bars/SideBar";
 
 const DashboardLayout: React.FC = () => {
      const [authModal, setAuthModal] = useState(false);
@@ -78,7 +80,8 @@ const DashboardLayout: React.FC = () => {
             <div className="dashboard-layout" >
                 {/* Example: add navbar, sidebar, etc. */}
                 <div className="d-flex dashboard-content ">
-                    <div className="bg-primary w-25 text-center">
+                    <ReusableSideBar guides={guides}/>
+                    {/* <div className="bg-primary w-25 text-center">
                         <Image src={compLogo} height={150} /> 
                         <ul className="w-100 text-light m-0 p-0">
                             {
@@ -86,9 +89,9 @@ const DashboardLayout: React.FC = () => {
                             }
                             <li role="button" onClick={()=>{localStorage.clear(); navigate('/')}} className="d-flex gap-3 p-3 mt-5"><i className="bi bi-box-arrow-left"></i> Logout</li>
                         </ul>
-                    </div>
+                    </div> */}
                     {/* Render nested routes */}
-                   <div className="w-75" style={{overflow:'scroll',height:'100vh'}}>
+                   <div className="w-100" style={{overflow:'scroll',height:'100vh'}}>
                     <NavbarUnAuth gotToPostAd={()=>console.log('ok')} gotoProfile={()=>console.log('ok')}/>
                     <div className="p-4">
                          <Outlet />

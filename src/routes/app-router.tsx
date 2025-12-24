@@ -21,6 +21,7 @@ import AdminPage from '../pages/dashboard/AdminsPage';
 import ChefsPage from '../pages/dashboard/ChefsPage';
 import CustomersPage from '../pages/dashboard/CustomersPage';
 import SettingsPage from '../pages/dashboard/SettingsPage';
+import ViewChefsPage from '../pages/dashboard/ViewChefPage';
 
 
 const AppRouter = () => {
@@ -40,6 +41,7 @@ const AppRouter = () => {
         <Route index element={<DashboardPage/>} />
         <Route path="admins" element={<AdminPage/>} />
         <Route path="chefs" element={<ChefsPage/>} />
+        <Route path="chef/:id" element={<ViewChefsPage/>}/>
         <Route path='customers' element={<CustomersPage/>} />
         <Route path="settings" element={<SettingsPage/>} />
 

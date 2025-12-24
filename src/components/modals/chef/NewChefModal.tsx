@@ -15,6 +15,37 @@ interface IAuthModal {
     onLogin: () => void;
 }
 
+const chefCats = [
+    {
+        label:'Daily Chef',
+        value:'dailychef'
+    },
+    {
+        label:'Residential Chef',
+        value:'residentialchef'
+    },
+    {
+        label:'Alase',
+        value:'alase'
+    },
+    {
+        label:'Restaurant Consultation',
+        value:'consultatant'
+    },
+    {
+        label:'Event Catering',
+        value:'catrer'
+    },
+    {
+        label:'Culinary Trainer',
+        value:'trainer'
+    },
+    {
+        label:'Travel Chef',
+        value:'travelchef'
+    },
+]
+
 // --- Step Schemas ---
 const step1Schema = Yup.object({
     staffId: Yup.string().required("Staff Id is required"),
@@ -40,6 +71,7 @@ const step3Schema = Yup.object({
         .test("fileType", "Unsupported file format", (value: any) =>
             !value || (value && ["image/jpeg", "image/png", "image/jpg"].includes(value.type))
         ),
+        category: Yup.object().required("Required"),
     password: Yup.string()
         .min(8, "Password must be at least 8 characters")
         .matches(/[A-Z]/, "Must contain one uppercase letter")
@@ -71,7 +103,8 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
         state: null,
         chefPic: null,
         password: "",
-        stateId:"22"
+        stateId:"22",
+        category:null
     });
 
     // --- Register user ---
@@ -84,6 +117,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
             ...rest,
             state: rest.state?.value || rest.state || "",
             location: rest.location?.value || rest.location || "",
+            category: rest.category?.label || rest.category || "",
         };
 
         // Using FormData for file upload
@@ -151,13 +185,13 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                         validationSchema={step1Schema}
                         onSubmit={handleNext}
                     >
-                        <ReusableInputs label="Staff ID" placeholder="Enter staff ID" inputType="text" name="staffId" id="staffId" />
+                        <ReusableInputs label="Chef ID" placeholder="Enter chef ID" inputType="text" name="staffId" id="staffId" />
                         <ErrorMessage name="staffId" component="div" className="text-danger small mt-1" />
 
-                        <ReusableInputs label="Full Name" placeholder="Enter your full name" inputType="text" name="name" id="name" />
+                        <ReusableInputs label="Full Name" placeholder="Enter full name" inputType="text" name="name" id="name" />
                         <ErrorMessage name="name" component="div" className="text-danger small mt-1" />
 
-                        <ReusableInputs label="Email" placeholder="Enter your email" inputType="email" name="email" id="email" />
+                        <ReusableInputs label="Email" placeholder="Enter email" inputType="email" name="email" id="email" />
                         <ErrorMessage name="email" component="div" className="text-danger small mt-1" />
 
                         <ReusableInputs label="Gender" inputType="radio-button" name="gender" id="gender" />
@@ -287,6 +321,16 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                                             />
                                         )}
                                     </div>
+
+                                    <ReusableDropDownStates
+                                    options={chefCats}
+                                    label="Category"
+                                    placeholder="Select chef category"
+                                    inputType="text"
+                                    name="category"
+                                    id="category"
+                                />
+                                <ErrorMessage name="category" component="div" className="text-danger small mt-1" />
 
                                     {/* Password */}
                                     <ReusableInputs icon2="bi bi-eye-slash" label="Set Password" placeholder="Enter password" inputType="password" name="password" id="password" />

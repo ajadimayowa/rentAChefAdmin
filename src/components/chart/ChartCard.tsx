@@ -30,7 +30,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
   dataKey,
   xKey,
   chartType = 'line',
-  color = '#8884d8',
+  color = '#0f05d1ff',
   height = 250,
 }) => {
   return (

@@ -4,9 +4,10 @@ import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
 import { useState } from "react"
+import ChartCard from "../../components/chart/ChartCard"
 
 const DashboardPage = () => {
-    const [onCreateChef,setOnCreateChef] = useState(false)
+    const [onCreateChef, setOnCreateChef] = useState(false)
     const infoCardData = [
         {
             id: '1',
@@ -15,7 +16,7 @@ const DashboardPage = () => {
             icon: 'bi bi-speedometer2',
             path: '/dashboard',
             count: '5',
-            isMoney:true
+            isMoney: true
         },
         {
             id: '2',
@@ -35,10 +36,19 @@ const DashboardPage = () => {
         }
 
     ]
+
+    const ante_natal_childbirth_trend_ana_data = [
+        { name: "Jan", revenue: 40 },
+        { name: "Feb", revenue: 70 },
+        { name: "Mar", revenue: 65 },
+        { name: "Apr", revenue: 100 },
+        { name: "May", revenue: 90 },
+        { name: "Jun", revenue: 120 },
+    ];
     return (
         <div>
             <div className="d-flex justify-content-end">
-                <CustomIconButton onClick={()=>setOnCreateChef(true)} className="text-light" title="Create New Chef"/>
+                <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="Create New Chef" />
 
             </div>
             <Row className="mt-4">
@@ -59,7 +69,7 @@ const DashboardPage = () => {
                                 </p>
                                 <h3>
                                     {
-                                        card.isMoney?convertToThousand(card.count):card.count
+                                        card.isMoney ? convertToThousand(card.count) : card.count
                                     }
                                 </h3>
 
@@ -68,7 +78,13 @@ const DashboardPage = () => {
                     </Col>))
                 }
             </Row>
-<NewChefModal on={onCreateChef} off={()=>setOnCreateChef(false) } onLogin={()=>console.log('ok')}/>
+
+            <Row className=" m-0 mt-4">
+                <Col>
+                    <ChartCard xKey="" dataKey='' title="Client/Book Trend" data={ante_natal_childbirth_trend_ana_data} />
+                </Col>
+            </Row>
+            <NewChefModal on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
         </div>
     )
 }
