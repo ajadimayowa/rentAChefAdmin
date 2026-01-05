@@ -8,6 +8,9 @@ import api from "../../../app/api";
 import { toast } from "react-toastify";
 import { ReusableForm } from "../../forms/ReusableForm";
 import ReusableDropDownStates from "../../custom-input/ReusableDropDownStates";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../store/store";
+
 
 interface IAuthModal {
     on: boolean;
@@ -85,6 +88,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
     const [loading, setLoading] = useState(false);
     const statesString = localStorage.getItem("states");
     const states = statesString ? JSON.parse(statesString) : [];
+    const chefCategories = useSelector((state:RootState)=>(state.statics.categories))
     const formatedStatesForDropDown = states.map((state: any) => ({
         label: state?.state,
         value: state?.state,
@@ -117,7 +121,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
             ...rest,
             state: rest.state?.value || rest.state || "",
             location: rest.location?.value || rest.location || "",
-            category: rest.category?.label || rest.category || "",
+            category: rest.category?.value || rest.category || "",
         };
 
         // Using FormData for file upload
@@ -323,7 +327,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                                     </div>
 
                                     <ReusableDropDownStates
-                                    options={chefCats}
+                                    options={chefCategories}
                                     label="Category"
                                     placeholder="Select chef category"
                                     inputType="text"

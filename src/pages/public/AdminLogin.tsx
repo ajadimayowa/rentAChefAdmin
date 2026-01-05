@@ -14,6 +14,7 @@ import api from "../../app/api";
 import { toast } from "react-toastify";
 import { setUserData } from "../../features/auth/authSlice";
 import { loadStates } from "../../utils/helpers";
+import { setCategories } from "../../features/statics/staticsSlice";
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -32,7 +33,8 @@ const AdminLoginPage = () => {
             loadStates()
             localStorage.setItem('userToken',res?.data?.token);
             localStorage.setItem('userId',res?.data?.payload?.id);
-            dispatch(setUserData(res?.data?.payload))
+            dispatch(setUserData(res?.data?.payload));
+            dispatch(setCategories(res?.data?.payload?.formattedCategories));
             navigate('/dashboard')
             toast.success('Login Successful!')
             // setUserEmail(values.email);
@@ -76,7 +78,7 @@ const AdminLoginPage = () => {
                                 onSubmit={loginAdmin}
                                 initialValues={{ email: '', password: '' }}
                                 validationSchema={loginSchema}
-                                loading={false}
+                                loading={loading}
                                 buttonTitle="Login"
                             >
                                 <div className="d-flex flex-row justify-content-between">

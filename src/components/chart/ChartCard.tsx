@@ -24,13 +24,21 @@ interface ChartCardProps {
   height?: number;
 }
 
+ const chartData = [
+  { name: 'Jan', users: 120 },
+  { name: 'Feb', users: 210 },
+  { name: 'Mar', users: 180 },
+  { name: 'Apr', users: 260 },
+  { name: 'May', users: 300 },
+];
+
 const ChartCard: React.FC<ChartCardProps> = ({
   title,
   data,
   dataKey,
   xKey,
   chartType = 'line',
-  color = '#0f05d1ff',
+  color = '#1c1c1cff',
   height = 250,
 }) => {
   return (
@@ -54,7 +62,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
           </AreaChart>
         ) : (
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="1 1" />
             <XAxis dataKey={xKey} />
             <YAxis />
             <Tooltip />

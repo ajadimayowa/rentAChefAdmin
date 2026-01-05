@@ -15,11 +15,38 @@ import moment from "moment"
 const ChefsPage = () => {
     const [onCreateChef, setOnCreateChef] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [limit, setLimit] = useState(10);
+    const [page, setPage] = useState(1);
+    const [totalItem, setTotalItem] = useState({
+        total: 0,
+        limit: 0,
+        page: 0,
+        totalPages: 0,
+    });
     const [step, setStep] = useState(1);
     const [userEmail, setUserEmail] = useState("");
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [chefs,setChefs] = useState<any[]>([])
+    const [refData, setRefData] = useState(false);
+    const [chefs, setChefs] = useState<any[]>([]);
+
+
+    const handlePagination = (value: number) => {
+        setPage(value);
+        setRefData(!refData);
+    };
+
+    const handlePrevious = () => {
+        setPage(totalItem.page - 1);
+        setRefData(!refData)
+    };
+
+    const handleNext = () => {
+        // console.log({ seeCurren: totalItem.currentPage })
+        setPage(totalItem?.page + 1);
+        setRefData(!refData)
+    };
+
     const infoCardData = [
         {
             id: '1',
@@ -52,9 +79,9 @@ const ChefsPage = () => {
     const fetchChefs = async () => {
         setLoading(true);
         try {
-            const res = await api.get("/chef/all");
-            setChefs(res?.data?.payload)
-            console.log("chefs:", res.data);
+            const res = await api.get(`/chefs?limit=${limit}&page=${page}`);
+            setChefs(res?.data?.payload);
+            setTotalItem({ ...res.data?.meta });
             // loadStates()
             // localStorage.setItem('userToken',res?.data?.token);
             // localStorage.setItem('userId',res?.data?.payload?.id);
@@ -67,13 +94,13 @@ const ChefsPage = () => {
         } catch (error) {
             console.error(error);
             setLoading(false);
-             toast.error('Invalid Credentials')
+            toast.error('Invalid Credentials')
         }
     };
 
-    useEffect(()=>{
+    useEffect(() => {
         fetchChefs()
-    },[])
+    }, [refData])
     return (
         <div>
             <div className="">
@@ -118,21 +145,49 @@ const ChefsPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colSpan={4}>{loading && <Spinner/>}</td></tr>
+                        <tr className="text-center"><td colSpan={7}>{loading && <Spinner />}</td></tr>
                         {
-                            chefs.map((chef,index:number)=>(<tr onClick={()=>navigate(`/dashboard/chef/${chef?.id}`)}>
-                            <th scope="row">{index+1}</th>
-                            <td>{chef?.staffId}</td>
-                            <td>{chef?.name}</td>
-                            <td>{chef?.state}</td>
-                            <td>{chef?.location}</td>
-                            <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
-                            <td><i className="bi bi-three-dots-vertical"></i></td>
-                        </tr>))
+                            chefs.map((chef, index: number) => (<tr onClick={() => navigate(`/dashboard/chef/${chef?.id}`)}>
+                                <th scope="row">{index + 1}</th>
+                                <td>{chef?.staffId}</td>
+                                <td>{chef?.name}</td>
+                                <td>{chef?.state}</td>
+                                <td>{chef?.location}</td>
+                                <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
+                                <td><i className="bi bi-three-dots-vertical"></i></td>
+                            </tr>))
                         }
                     </tbody>
                 </table>
             </div>
+
+            {chefs.length > 0 && (
+                <nav className="mt-5" aria-label="Page navigation example">
+                    <ul className="pagination justify-content-center">
+                        <Button onClick={handlePrevious} className="page-item" disabled={totalItem.page == 1}>
+                            Previous
+                        </Button>
+                        {Array(totalItem.totalPages)
+                            .fill('')
+                            .map((value: any, index: any): any => (
+                                <li
+                                    key={index}
+                                    style={{
+                                        backgroundColor: index + 1 == totalItem.page ? '#3F718D' : '',
+                                        cursor: 'pointer',
+                                    }}
+                                    className="page-item"
+                                    onClick={() => handlePagination(index + 1)}
+                                >
+                                    <a className="page-link">{index + 1}</a>
+                                </li>
+                            ))}
+                        <Button onClick={handleNext} className="page-item" disabled={totalItem.page == totalItem.totalPages}>
+                            Next
+                        </Button>
+                    </ul>
+                </nav>
+            )}
             <NewChefModal on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
         </div>
     )

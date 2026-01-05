@@ -1,4 +1,6 @@
+import { useSelector } from "react-redux";
 import api from "../app/api";
+import { RootState } from "../store/store";
 
 export const Naira = '₦';
 export const convertToThousand = (value:any) => {
@@ -31,3 +33,22 @@ export const loadStates = async () => {
         console.log(error)
     }
 };
+
+// export const loadCategories = async () => {
+//     const categories = useSelector((user: RootState) => user.statics.categories)
+//     try {
+//         const cached = localStorage.getItem("states");
+
+//         if (cached) {
+//             return JSON.parse(cached);
+//         }
+
+       
+//         const response = await api.get(`states/get-states`);
+//         const data = JSON.stringify(response?.data?.payload);
+//        console.log({seeData:data})
+//          localStorage.setItem("states", data);
+//     } catch (error) {
+//         console.log(error)
+//     }
+// };

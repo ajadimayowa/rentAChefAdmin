@@ -115,7 +115,7 @@ const AdminsPage = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colSpan={4}>{loading && <Spinner/>}</td></tr>
+                        <tr className="text-center"><td colSpan={4}>{loading && <Spinner/>}</td></tr>
                         {
                             admins.map((chef,index:number)=>(<tr 
                             // onClick={()=>navigate(`/dashboard/chef/${chef?.id}`)}

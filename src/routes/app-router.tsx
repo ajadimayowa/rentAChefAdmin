@@ -29,14 +29,13 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public Routes: Accessible without authentication */}
-        <Route path="/" element={<AdminLoginPage />} />
-        <Route path="/search" element={<ProductSearchPage />} />
+        <Route path="/" element={<AdminLoginPage/>} />
+        <Route path="/search" element={<ProductSearchPage/>} />
         <Route path="/user-search" element={<UserSearchPage />} />
         <Route path='*' element={<NotFound/>}/>
         <Route path='/ads' element={<AllAdsPage/>}/>
         <Route path='/ad/:id' element={<ViewAdPage/>}/>
         <Route path='/category/:categoryId' element={<CategoryProductsPage/>}/>
-        
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
         <Route index element={<DashboardPage/>} />
         <Route path="admins" element={<AdminPage/>} />
@@ -44,7 +43,6 @@ const AppRouter = () => {
         <Route path="chef/:id" element={<ViewChefsPage/>}/>
         <Route path='customers' element={<CustomersPage/>} />
         <Route path="settings" element={<SettingsPage/>} />
-
         </Route>
       </Routes>
     </Router>
