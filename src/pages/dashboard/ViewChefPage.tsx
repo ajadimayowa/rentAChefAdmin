@@ -1,4 +1,4 @@
-import { Badge, Button, Card, Col, Image, Row } from "react-bootstrap"
+import { Badge, Button, Card, Col, Image, ListGroup, Row, Spinner } from "react-bootstrap"
 import { convertToThousand } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
@@ -21,7 +21,7 @@ export interface IChef {
     "specialties": [
     ],
     "category": "",
-    categoryName:"",
+    categoryName: "",
     "phoneNumber": number,
     "location": "",
     "state": "",
@@ -188,32 +188,34 @@ const ViewChefPage = () => {
                                     Chef Profile
                                 </p>
 
-                                <Button onClick={()=>setOnUpdateChefProfile(true)} variant="outline border">Update profile</Button>
+                                <Button onClick={() => setOnUpdateChefProfile(true)} variant="outline border">Update profile</Button>
                             </div>
-                            <div className="d-flex gap-4 mt-4 align-items-center">
-                                <div className="">
-                                    {
-                                        chef?.profilePic ? <Image height={250} className="rounded-3" src={chef.profilePic} /> :
-                                            <Image height={250} className="rounded-3" src={chefAvatar} />}
+                            {
+                                loading ? <Spinner size="sm" /> :
+                                    <div className="d-flex gap-4 mt-4 align-items-center">
+                                        <div className="">
+                                            {
+                                                chef?.profilePic ? <Image height={250} className="rounded-3" src={chef.profilePic} /> :
+                                                    <Image height={250} className="rounded-3" src={chefAvatar} />}
 
-                                </div>
-                                <div>
-                                    <label>Full Name</label>
-                                    <p>{chef?.name}<small>{` (${chef?.categoryName})`}</small></p>
+                                        </div>
+                                        <div>
+                                            <label>Full Name</label>
+                                            <p>{chef?.name ?? '-'}<small>{` (${chef?.categoryName ?? '-'})`}</small></p>
 
-                                    <label>Location</label>
-                                    <p>{`${chef?.location},${chef?.state}`}</p>
+                                            <label>Location</label>
+                                            <p>{`${chef?.location},${chef?.state}`}</p>
 
-                                    <label>Specialties</label>
-                                    <p>Continental,International</p>
+                                            <label>Specialties</label>
+                                            <p>Continental,International</p>
 
-                                    <label>Phone Number</label>
-                                    <p>{chef?.phoneNumber}</p>
+                                            <label>Phone Number</label>
+                                            <p>{chef?.phoneNumber}</p>
 
-                                    {/* <label>Chef Type</label>
+                                            {/* <label>Chef Type</label>
                                     <p>08166064166</p> */}
-                                </div>
-                            </div>
+                                        </div>
+                                    </div>}
 
                         </Card.Body>
                     </Card>
@@ -245,24 +247,54 @@ const ViewChefPage = () => {
                                                 <Card.Header className="bg-dark text-light">
                                                     <div className="d-flex justify-content-between w-100">
                                                         <p className="p-0 m-0 text-light fw-bold">{menu?.title}</p>
-                                                        <i className="bi bi-three-dots-vertical"></i>
+                                                        <div className="table-icon">
+
+                                                            <i className="bi bi-three-dots-vertical"></i>
+                                                                <div className="content p-2 card border shadow position-absolute mr-2">
+                                                                    <Card className="rounded rounded-3 border-0 shadow-lg text-left" style={{ minWidth: '10rem' }}>
+                                                                        {
+                                                                            <>
+                                                                                <ListGroup variant="flush">
+                                                                                    <ListGroup.Item
+                                                                                        onClick={() => {
+                                                                                            // history.push('/hospital/profile');
+                                                                                            window.scrollTo(0, 0);
+                                                                                        }}
+                                                                                    >
+                                                                                        Add procurement
+                                                                                    </ListGroup.Item>
+                                                                                </ListGroup>
+
+                                                                                <ListGroup variant="flush">
+                                                                                    <ListGroup.Item
+                                                                                    >
+                                                                                        Update
+                                                                                    </ListGroup.Item>
+                                                                                </ListGroup>
+
+                                                                                <ListGroup variant="flush">
+                                                                                    <ListGroup.Item
+                                                                                    // onClick={handleLogout}
+                                                                                    >Delete</ListGroup.Item>
+                                                                                </ListGroup>
+                                                                            </>
+                                                                        }
+                                                                    </Card>
+                                                                </div>
+
+                                                        </div>
                                                     </div>
                                                 </Card.Header>
                                                 <Card.Body
                                                 >
-                                                    <Badge className="m-1 bg-info">
+                                                    {
+                                                        menu.items.length>0?menu.items.map((groceries)=>( <Badge className="m-1 bg-info">
                                                         <div>
                                                             Onions
                                                         </div>
                                                         <div>{convertToThousand(5000)}</div>
-                                                    </Badge>
-
-                                                    <Badge className="m-1 bg-info">
-                                                        <div>
-                                                            Meat
-                                                        </div>
-                                                        <div>{convertToThousand(1500)}</div>
-                                                    </Badge>
+                                                    </Badge>)) : <div><Badge className="p-2 rounded">No procurement details</Badge> </div>
+                                                    }
 
 
 

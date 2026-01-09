@@ -140,5 +140,36 @@ input, textarea, select {
   background-color: $light;
 }
 
+
+.table > :not(caption) > * > * {
+	padding: 0.75rem 0.5rem !important;
+}
+
+.table-icon .list-group-item {
+	cursor: pointer;
+}
+
+.table-icon .list-group-item:hover {
+	background: var(--bs-primary);
+	color: #fff;
+}
+
+.cardHover:hover {
+	transform: translateY(-10px);
+	box-shadow: 5px 2rem 3rem rgb(0 0 0 / 16%) !important;
+}
+
+.table-icon .content {
+	display: none;
+}
+.table-icon:hover .content {
+	display: block;
+	right: 1rem;
+	z-index: 9999999 !important;
+}
+.content:hover {
+	display: block;
+}
+
 // Import Bootstrap (must come after variable declarations if you want to override them)
 @import "bootstrap/scss/bootstrap";
