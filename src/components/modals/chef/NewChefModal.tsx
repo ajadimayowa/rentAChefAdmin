@@ -122,6 +122,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
             state: rest.state?.value || rest.state || "",
             location: rest.location?.value || rest.location || "",
             category: rest.category?.value || rest.category || "",
+            categoryName: rest.category?.label || rest.category || "",
         };
 
         // Using FormData for file upload

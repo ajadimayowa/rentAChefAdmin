@@ -9,30 +9,51 @@ import chefAvatar from '../../assets/images/cookemoji.png'
 import { useDispatch } from "react-redux"
 import api from "../../app/api"
 import { toast } from "react-toastify"
+import CreateChefMenu from "../../components/modals/chef/CreateChefMenu"
+import UpdateChefProfileModal from "../../components/modals/chef/UpdateChefProfileModal"
 
 export interface IChef {
-        "staffId": string,
-        "name": string,
-        "gender": string,
-        "email": string,
-        "bio": string,
-        "specialties": [
-        ],
-        "category": "",
-        "phoneNumber": number,
-        "location": "",
-        "state": "",
-        "stateId": number,
-        "profilePic": string,
-        "menus": [],
-        "isPasswordUpdated": boolean,
-        "isActive": boolean,
-        "createdAt": string,
-        "updatedAt": string,
-        "id": string,
-    }
+    "staffId": string,
+    "name": string,
+    "gender": string,
+    "email": string,
+    "bio": string,
+    "specialties": [
+    ],
+    "category": "",
+    categoryName:"",
+    "phoneNumber": number,
+    "location": "",
+    "state": "",
+    "stateId": number,
+    "profilePic": string,
+    "menus": [],
+    "isPasswordUpdated": boolean,
+    "isActive": boolean,
+    "createdAt": string,
+    "updatedAt": string,
+    "id": string,
+}
+
+export interface IMenu {
+    "chef": {
+        "name": string;
+        "email": string;
+        "id": string;
+    },
+    "title": string;
+    "menuPic": string;
+    "basePrice": number;
+    "items": any[],
+    "createdAt": string;
+    "updatedAt": string;
+    "id": string;
+}
+
 const ViewChefPage = () => {
-    const [onCreateChef, setOnCreateChef] = useState(false)
+    const [refData, setRefData] = useState(false)
+    const [onCreateChef, setOnCreateChef] = useState(false);
+    const [onUpdateChefProfile, setOnUpdateChefProfile] = useState(false)
     const params: any = useParams();
     const id = params?.id;
     const [loading, setLoading] = useState(false);
@@ -40,32 +61,33 @@ const ViewChefPage = () => {
     const [userEmail, setUserEmail] = useState("");
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [chef,setChef] = useState<IChef>()
+    const [chef, setChef] = useState<IChef>()
+    const [chefMenu, setChefMenu] = useState<IMenu[]>([])
     const infoCardData = [
         {
             id: '1',
             label: 'Total Menu',
-            desc: 'Total revenue',
+            desc: 'Total menu for this chef',
             icon: 'bi bi-speedometer2',
             path: '/dashboard',
-            count: '5',
-            isMoney: true
+            count: chefMenu.length,
+            isMoney: false
         },
         {
             id: '2',
             label: 'Bookings Completed',
-            desc: 'No of active customers',
+            desc: 'No of completed bookings',
             icon: 'bi bi-person-workspace',
             path: '/admin',
-            count: '3'
+            count: '-'
         },
         {
             id: '3',
-            label: 'Bookings Missed',
-            desc: 'No of active chefs',
+            label: 'Upcoming bookings',
+            desc: 'No upcoming bookings',
             icon: 'bi bi-backpack',
             path: '/chefs',
-            count: '2'
+            count: '-'
         }
 
     ]
@@ -88,19 +110,42 @@ const ViewChefPage = () => {
         } catch (error) {
             console.error(error);
             setLoading(false);
-             toast.error('Invalid Credentials')
+            toast.error('Invalid Credentials')
         }
     };
 
-    useEffect(()=>{
-        fetchChef()
-    },[])
+    const fetchChefMenu = async () => {
+        // setLoading(true);
+        try {
+            const res = await api.get(`menu/getMenus?chefId=${id}`);
+            setChefMenu(res?.data?.payload)
+            // console.log("chefs:", res.data);
+            // loadStates()
+            // localStorage.setItem('userToken',res?.data?.token);
+            // localStorage.setItem('userId',res?.data?.payload?.id);
+            // dispatch(setUserData(res?.data?.payload))
+            // navigate('/dashboard')
+            // toast.success('Login Successful!')
+            // setUserEmail(values.email);
+            setLoading(false);
+            // setStep(2); // proceed to OTP verification
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+            toast.error('Unable to fetch chef menu!')
+        }
+    };
+
+    useEffect(() => {
+        fetchChef();
+        fetchChefMenu()
+    }, [refData])
     return (
         <div>
-            <div className="d-flex justify-content-end">
-                <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="Create Menu" />
+            {/* <div className="d-flex justify-content-end">
+                <CustomIconButton className="text-light" title="Create Menu" />
 
-            </div>
+            </div> */}
             <Row className="mt-4">
 
                 {
@@ -130,7 +175,7 @@ const ViewChefPage = () => {
             </Row>
             <div className="d-flex w-100 justify-content-end text-end">
                 <a href="#">
-                   View Booking history
+                    View Booking history
                 </a>
             </div>
 
@@ -143,16 +188,18 @@ const ViewChefPage = () => {
                                     Chef Profile
                                 </p>
 
-                                <Button variant="outline border">Update profile</Button>
+                                <Button onClick={()=>setOnUpdateChefProfile(true)} variant="outline border">Update profile</Button>
                             </div>
                             <div className="d-flex gap-4 mt-4 align-items-center">
                                 <div className="">
-                                    <Image  height={250} className="rounded-3" src={chefAvatar} />
+                                    {
+                                        chef?.profilePic ? <Image height={250} className="rounded-3" src={chef.profilePic} /> :
+                                            <Image height={250} className="rounded-3" src={chefAvatar} />}
 
                                 </div>
                                 <div>
                                     <label>Full Name</label>
-                                    <p>{chef?.name}<small>{` (${chef?.category})`}</small></p>
+                                    <p>{chef?.name}<small>{` (${chef?.categoryName})`}</small></p>
 
                                     <label>Location</label>
                                     <p>{`${chef?.location},${chef?.state}`}</p>
@@ -180,47 +227,62 @@ const ViewChefPage = () => {
                                     Chef Menu
                                 </p>
 
-                                <Button variant="outline border">Add Menu</Button>
+                                <Button onClick={() => setOnCreateChef(true)} variant="outline border">Add Menu</Button>
                             </div>
                             <div className="mt-4 gap-3">
-                                <Card className="m-2">
-                                    <Card.Header>
-                                        <div className="d-flex justify-content-between w-100">
-                                            <p className="p-0 m-0 fw-bold">Calabar Special</p>
-                                            <i className="bi bi-three-dots-vertical"></i>
-                                        </div>
-                                    </Card.Header>
-                                    <Card.Body>
-                                        <Badge className="m-1 bg-info">
-                                            <div>
-                                                Onions
-                                            </div>
-                                            <div>{convertToThousand(5000)}</div>
-                                        </Badge>
+                                {
+                                    chefMenu.length > 0 ?
+                                        chefMenu.map((menu) => (<div>
+                                            <Card className="m-2"
+                                                style={{
+                                                    backgroundImage: menu?.menuPic
+                                                        ? `url(${menu.menuPic})`
+                                                        : "none",
+                                                    backgroundSize: "cover",
+                                                    minHeight: 250,
+                                                    backgroundPosition: "center",
+                                                }}>
+                                                <Card.Header className="bg-dark text-light">
+                                                    <div className="d-flex justify-content-between w-100">
+                                                        <p className="p-0 m-0 text-light fw-bold">{menu?.title}</p>
+                                                        <i className="bi bi-three-dots-vertical"></i>
+                                                    </div>
+                                                </Card.Header>
+                                                <Card.Body
+                                                >
+                                                    <Badge className="m-1 bg-info">
+                                                        <div>
+                                                            Onions
+                                                        </div>
+                                                        <div>{convertToThousand(5000)}</div>
+                                                    </Badge>
 
-                                        <Badge className="m-1 bg-info">
-                                            <div>
-                                                Meat
-                                            </div>
-                                            <div>{convertToThousand(1500)}</div>
-                                        </Badge>
+                                                    <Badge className="m-1 bg-info">
+                                                        <div>
+                                                            Meat
+                                                        </div>
+                                                        <div>{convertToThousand(1500)}</div>
+                                                    </Badge>
 
 
 
 
-                                    </Card.Body>
+                                                </Card.Body>
 
-                                    <Card.Footer>
-                                      <div className="d-flex justify-content-between w-100">
-                                            <p className="p-0 m-0">
-                                                {convertToThousand(20000)}
-                                            </p>
-                                            <i className="bi bi-trash text-danger"></i>
-                                        </div>
-                                    </Card.Footer>
-                                </Card>
+                                                <Card.Footer className="bg-dark">
+                                                    <div className="d-flex justify-content-between  text-light w-100">
+                                                        <p className="p-0 m-0 text-light">
+                                                            {convertToThousand(20000)}/Person
+                                                        </p>
+                                                        <i className="bi bi-trash text-light"></i>
+                                                    </div>
+                                                </Card.Footer>
+                                            </Card>
+                                        </div>))
+                                        : <div className="fw-bold">{!loading && `This chef has no menu`}</div>
+                                }
 
-                                <Card className="m-2">
+                                {/* <Card className="m-2">
                                     <Card.Header>
                                         <div className="d-flex justify-content-between w-100">
                                             <p className="p-0 m-0 fw-bold">Smoky Jollof</p>
@@ -255,14 +317,15 @@ const ViewChefPage = () => {
                                             <i className="bi bi-trash text-danger"></i>
                                         </div>
                                     </Card.Footer>
-                                </Card>
+                                </Card> */}
                             </div>
 
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
-            <NewChefModal on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
+            <CreateChefMenu chefName={chef?.name || ''} chefId={chef?.id || ''} on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
+            <UpdateChefProfileModal chefName={chef?.name || ''} chefId={chef?.id || ''} on={onUpdateChefProfile} off={() => setOnUpdateChefProfile(false)} onLogin={() => console.log('ok')} />
         </div>
     )
 }
