@@ -12,7 +12,7 @@ import api from "../../app/api"
 import { toast } from "react-toastify"
 import moment from "moment"
 
-const ChefsPage = () => {
+const MenusPage = () => {
     const [onCreateChef, setOnCreateChef] = useState(false);
     const [loading, setLoading] = useState(false);
     const [limit, setLimit] = useState(10);
@@ -82,8 +82,8 @@ const ChefsPage = () => {
         setLoading(true);
         try {
             const res = await api.get(`/chefs?name=${searchedName}&limit=${limit}&page=${page}`);
-            setChefs(res?.data?.payload);
-            setTotalItem({ ...res.data?.meta });
+            // setChefs(res?.data?.payload);
+            // setTotalItem({ ...res.data?.meta });
             // loadStates()
             // localStorage.setItem('userToken',res?.data?.token);
             // localStorage.setItem('userId',res?.data?.payload?.id);
@@ -106,8 +106,8 @@ const ChefsPage = () => {
         } else {
             try {
                 const res = await api.get(`/chefs?limit=${limit}&page=${page}`);
-                setChefs(res?.data?.payload);
-                setTotalItem({ ...res.data?.meta });
+                // setChefs(res?.data?.payload);
+                // setTotalItem({ ...res.data?.meta });
                 // loadStates()
                 // localStorage.setItem('userToken',res?.data?.token);
                 // localStorage.setItem('userId',res?.data?.payload?.id);
@@ -131,8 +131,8 @@ const ChefsPage = () => {
     return (
         <div>
             <div className="">
-                <h5>All Chefs</h5>
-                <p>Manage registered chefs from here.</p>
+                <h5>Food Menu Page</h5>
+                <p>See a list of all your available menus</p>
 
 
             </div>
@@ -146,7 +146,7 @@ const ChefsPage = () => {
                             {
                                 ({ handleSubmit }) => (
                                     <Form onSubmit={handleSubmit}>
-                                        <ReusableInputs onChange={(e) => setSearchedName(e.currentTarget.value)} placeholder="Search by name..." inputType="text-input" id="userSearch" name="userSearch" />
+                                        <ReusableInputs onChange={(e) => setSearchedName(e.currentTarget.value)} placeholder="Search by menu name..." inputType="text-input" id="userSearch" name="userSearch" />
                                     </Form>
                                 )
                             }
@@ -185,6 +185,7 @@ const ChefsPage = () => {
                                 {/* <td><i className="bi bi-three-dots-vertical"></i></td> */}
                             </tr>))
                         }
+                        <tr className="text-center"><td colSpan={8}>{!loading && chefs?.length<1 &&'No Data Available'}</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -220,4 +221,4 @@ const ChefsPage = () => {
         </div>
     )
 }
-export default ChefsPage
+export default MenusPage

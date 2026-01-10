@@ -22,6 +22,10 @@ import ChefsPage from '../pages/dashboard/ChefsPage';
 import CustomersPage from '../pages/dashboard/CustomersPage';
 import SettingsPage from '../pages/dashboard/SettingsPage';
 import ViewChefsPage from '../pages/dashboard/ViewChefPage';
+import MenusPage from '../pages/dashboard/MenusPage';
+import AddProcurementPage from '../pages/dashboard/AddProcurementPage';
+import UpdateMenuPage from '../pages/dashboard/UpdateMenuPage';
+import BookingsPage from '../pages/dashboard/BookingsPage';
 
 
 const AppRouter = () => {
@@ -39,6 +43,13 @@ const AppRouter = () => {
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
         <Route index element={<DashboardPage/>} />
         <Route path="admins" element={<AdminPage/>} />
+
+        <Route path="menus" element={<MenusPage/>} />
+        <Route path="menu/:id" element={<ViewChefsPage/>}/>
+        <Route path="menu/procurement/:id" element={<AddProcurementPage/>}/>
+        <Route path="menu/update/:id" element={<UpdateMenuPage/>}/>
+
+<Route path="bookings" element={<BookingsPage/>} />
         <Route path="chefs" element={<ChefsPage/>} />
         <Route path="chef/:id" element={<ViewChefsPage/>}/>
         <Route path='customers' element={<CustomersPage/>} />

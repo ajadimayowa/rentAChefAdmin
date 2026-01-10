@@ -25,26 +25,34 @@ const DashboardLayout: React.FC = () => {
             icon:'bi bi-speedometer2',
             path:'/dashboard'
         },
+
         {
             id:'2',
-            label:'Admins',
+            label:'Bookings',
             icon:'bi bi-person-workspace',
-            path:'/dashboard/admins'
+            path:'/dashboard/bookings'
+        },
+
+        // {
+        //     id:'2',
+        //     label:'Admins',
+        //     icon:'bi bi-person-workspace',
+        //     path:'/dashboard/admins'
+        // },
+         {
+            id:'3',
+            label:'Customers',
+            icon:'bi bi-person-add',
+            path:'/dashboard/customers'
         },
         {
-            id:'3',
+            id:'2',
             label:'Chefs',
             icon:'bi bi-backpack',
             path:'/dashboard/chefs'
         },
         {
             id:'4',
-            label:'Customers',
-            icon:'bi bi-person-add',
-            path:'/dashboard/customers'
-        },
-        {
-            id:'5',
             label:'Settings',
             icon:'bi bi-gear',
             path:'/dashboard/settings'

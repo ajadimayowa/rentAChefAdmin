@@ -4,7 +4,7 @@ import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
 import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import chefAvatar from '../../assets/images/cookemoji.png'
 import { useDispatch } from "react-redux"
 import api from "../../app/api"
@@ -117,7 +117,7 @@ const ViewChefPage = () => {
     const fetchChefMenu = async () => {
         // setLoading(true);
         try {
-            const res = await api.get(`menu/getMenus?chefId=${id}`);
+            const res = await api.get(`menu/getMenus?chefId=${id}&limit=3`);
             setChefMenu(res?.data?.payload)
             // console.log("chefs:", res.data);
             // loadStates()
@@ -173,7 +173,10 @@ const ViewChefPage = () => {
                     </Col>))
                 }
             </Row>
-            <div className="d-flex w-100 justify-content-end text-end">
+            <div className="d-flex w-100 gap-3 justify-content-end text-end">
+                 <a href="/dashboard/menus">
+                    Go to menu list
+                </a>
                 <a href="#">
                     View Booking history
                 </a>
@@ -256,19 +259,16 @@ const ViewChefPage = () => {
                                                                             <>
                                                                                 <ListGroup variant="flush">
                                                                                     <ListGroup.Item
-                                                                                        onClick={() => {
-                                                                                            // history.push('/hospital/profile');
-                                                                                            window.scrollTo(0, 0);
-                                                                                        }}
                                                                                     >
-                                                                                        Add procurement
+                                                                                        <Link to={`/dashboard/menu/procurement/${menu.id}`}>Procurements</Link>
                                                                                     </ListGroup.Item>
                                                                                 </ListGroup>
 
                                                                                 <ListGroup variant="flush">
                                                                                     <ListGroup.Item
                                                                                     >
-                                                                                        Update
+                                                                                        <Link to={`/dashboard/menu/update/${menu.id}`}>Update</Link>
+                                                                                        
                                                                                     </ListGroup.Item>
                                                                                 </ListGroup>
 
@@ -288,11 +288,13 @@ const ViewChefPage = () => {
                                                 <Card.Body
                                                 >
                                                     {
-                                                        menu.items.length>0?menu.items.map((groceries)=>( <Badge className="m-1 bg-info">
+                                                        menu.items.length>0?menu.items.map((groceries)=>( <Badge className="m-1 bg-warning text-dark">
                                                         <div>
-                                                            Onions
+                                                           {
+                                                            groceries?.name
+                                                           }
                                                         </div>
-                                                        <div>{convertToThousand(5000)}</div>
+                                                        <div>{convertToThousand(groceries?.price)}</div>
                                                     </Badge>)) : <div><Badge className="p-2 rounded">No procurement details</Badge> </div>
                                                     }
 
@@ -313,6 +315,8 @@ const ViewChefPage = () => {
                                         </div>))
                                         : <div className="fw-bold">{!loading && `This chef has no menu`}</div>
                                 }
+
+                              
 
                                 {/* <Card className="m-2">
                                     <Card.Header>

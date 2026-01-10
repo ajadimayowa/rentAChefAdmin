@@ -12,7 +12,7 @@ import api from "../../app/api"
 import { toast } from "react-toastify"
 import moment from "moment"
 
-const ChefsPage = () => {
+const BookingsPage = () => {
     const [onCreateChef, setOnCreateChef] = useState(false);
     const [loading, setLoading] = useState(false);
     const [limit, setLimit] = useState(10);
@@ -82,8 +82,8 @@ const ChefsPage = () => {
         setLoading(true);
         try {
             const res = await api.get(`/chefs?name=${searchedName}&limit=${limit}&page=${page}`);
-            setChefs(res?.data?.payload);
-            setTotalItem({ ...res.data?.meta });
+            // setChefs(res?.data?.payload);
+            // setTotalItem({ ...res.data?.meta });
             // loadStates()
             // localStorage.setItem('userToken',res?.data?.token);
             // localStorage.setItem('userId',res?.data?.payload?.id);
@@ -106,8 +106,8 @@ const ChefsPage = () => {
         } else {
             try {
                 const res = await api.get(`/chefs?limit=${limit}&page=${page}`);
-                setChefs(res?.data?.payload);
-                setTotalItem({ ...res.data?.meta });
+                // setChefs(res?.data?.payload);
+                // setTotalItem({ ...res.data?.meta });
                 // loadStates()
                 // localStorage.setItem('userToken',res?.data?.token);
                 // localStorage.setItem('userId',res?.data?.payload?.id);
@@ -131,29 +131,29 @@ const ChefsPage = () => {
     return (
         <div>
             <div className="">
-                <h5>All Chefs</h5>
-                <p>Manage registered chefs from here.</p>
+                <h5>Bookings</h5>
+                <p>Manage all bookings from here.</p>
 
 
             </div>
             <div className="mt-5">
-                <div className="w-100 d-flex justify-content-between mb-4">
-                    <div className="d-flex w-100 justify-content-between align-items-center">
+                <div className="w-100 d-flex justify-content-between  mb-4">
+                    <div className="d-flex w-100  justify-content-between align-items-center">
                         <Formik
                             initialValues={{ 'userSearch': '' }}
                             onSubmit={(v) => { setBySearch(true);setSearchedName(v?.userSearch); setRefData(!refData) }}
                         >
                             {
                                 ({ handleSubmit }) => (
-                                    <Form onSubmit={handleSubmit}>
-                                        <ReusableInputs onChange={(e) => setSearchedName(e.currentTarget.value)} placeholder="Search by name..." inputType="text-input" id="userSearch" name="userSearch" />
+                                    <Form onSubmit={handleSubmit} className="w-25">
+                                        <ReusableInputs className="w-50" onChange={(e) => setSearchedName(e.currentTarget.value)} placeholder="Search by booking id/name of client..." inputType="text-input" id="userSearch" name="userSearch" />
                                     </Form>
                                 )
                             }
 
                         </Formik>
 
-                        <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="+ Add New" />
+                        {/* <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="+ Add New" /> */}
                     </div>
                     <div></div>
 
@@ -163,12 +163,11 @@ const ChefsPage = () => {
                     <thead className="thead-light">
                         <tr>
                             <th className="bg-primary text-light" scope="col">#</th>
-                            <th className="bg-primary text-light" scope="col">Chef ID</th>
-                            <th className="bg-primary text-light" scope="col">Full name</th>
+                            <th className="bg-primary text-light" scope="col">Booking Id</th>
+                            <th className="bg-primary text-light" scope="col">Customer name</th>
                             <th className="bg-primary text-light" scope="col">State</th>
                             <th className="bg-primary text-light" scope="col">Location</th>
                             <th className="bg-primary text-light" scope="col">Created At</th>
-                            <th className="bg-primary text-light" scope="col">Passport</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -181,10 +180,12 @@ const ChefsPage = () => {
                                 <td>{chef?.state}</td>
                                 <td>{chef?.location}</td>
                                 <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
-                                <td><Image height={50} width={40} src={chef?.profilePic} /></td>
+                                {/* <td><Image height={50} width={40} src={chef?.profilePic} /></td> */}
                                 {/* <td><i className="bi bi-three-dots-vertical"></i></td> */}
                             </tr>))
                         }
+
+                         <tr className="text-center"><td colSpan={8}>{!loading && chefs?.length<1 &&'No Data Available'}</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -220,4 +221,4 @@ const ChefsPage = () => {
         </div>
     )
 }
-export default ChefsPage
+export default BookingsPage
