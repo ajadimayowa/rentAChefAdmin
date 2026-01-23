@@ -95,7 +95,10 @@ const DashboardPage = () => {
 
     return (
         <div>
-            {!loading && <div className="d-flex justify-content-end">
+            {!loading && <div className="d-flex justify-content-end gap-3 align-items-center">
+                <a href="/dashboard/menus">
+                    + Add Menu
+                </a>
                 <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="Create New Chef" />
 
             </div>}

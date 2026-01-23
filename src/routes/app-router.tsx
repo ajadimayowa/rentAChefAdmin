@@ -26,6 +26,7 @@ import MenusPage from '../pages/dashboard/MenusPage';
 import AddProcurementPage from '../pages/dashboard/AddProcurementPage';
 import UpdateMenuPage from '../pages/dashboard/UpdateMenuPage';
 import BookingsPage from '../pages/dashboard/BookingsPage';
+import ViewMenuPage from '../pages/dashboard/ViewMenuPage';
 
 
 const AppRouter = () => {
@@ -33,27 +34,27 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public Routes: Accessible without authentication */}
-        <Route path="/" element={<AdminLoginPage/>} />
-        <Route path="/search" element={<ProductSearchPage/>} />
+        <Route path="/" element={<AdminLoginPage />} />
+        <Route path="/search" element={<ProductSearchPage />} />
         <Route path="/user-search" element={<UserSearchPage />} />
-        <Route path='*' element={<NotFound/>}/>
-        <Route path='/ads' element={<AllAdsPage/>}/>
-        <Route path='/ad/:id' element={<ViewAdPage/>}/>
-        <Route path='/category/:categoryId' element={<CategoryProductsPage/>}/>
+        <Route path='*' element={<NotFound />} />
+        <Route path='/ads' element={<AllAdsPage />} />
+        <Route path='/ad/:id' element={<ViewAdPage />} />
+        <Route path='/category/:categoryId' element={<CategoryProductsPage />} />
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
-        <Route index element={<DashboardPage/>} />
-        <Route path="admins" element={<AdminPage/>} />
+          <Route index element={<DashboardPage />} />
+          <Route path="admins" element={<AdminPage />} />
 
-        <Route path="menus" element={<MenusPage/>} />
-        <Route path="menu/:id" element={<ViewChefsPage/>}/>
-        <Route path="menu/procurement/:id" element={<AddProcurementPage/>}/>
-        <Route path="menu/update/:id" element={<UpdateMenuPage/>}/>
+          <Route path="menus" element={<MenusPage />} />
+          <Route path="menu/:id" element={<ViewMenuPage />} />
+          <Route path="menu/procurement/:id" element={<AddProcurementPage />} />
+          <Route path="menu/update/:id" element={<UpdateMenuPage />} />
 
-<Route path="bookings" element={<BookingsPage/>} />
-        <Route path="chefs" element={<ChefsPage/>} />
-        <Route path="chef/:id" element={<ViewChefsPage/>}/>
-        <Route path='customers' element={<CustomersPage/>} />
-        <Route path="settings" element={<SettingsPage/>} />
+          <Route path="bookings" element={<BookingsPage />} />
+          <Route path="chefs" element={<ChefsPage />} />
+          <Route path="chef/:id" element={<ViewChefsPage />} />
+          <Route path='customers' element={<CustomersPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </Router>
