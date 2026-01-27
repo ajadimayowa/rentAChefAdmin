@@ -83,7 +83,7 @@ const MenusPage = () => {
     const searchMenus = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`menu/getMenus?name=${searchedName}&limit=${limit}&page=${page}`);
+            const res = await api.get(`specialmenu/menus?name=${searchedName}&limit=${limit}&page=${page}`);
             setMenus(res?.data?.payload);
             setTotalItem({ ...res.data?.meta });
             // loadStates()
@@ -107,7 +107,7 @@ const MenusPage = () => {
             searchMenus()
         } else {
             try {
-                const res = await api.get(`menu/getMenus`);
+                const res = await api.get(`specialmenu/menus`);
                 setMenus(res?.data?.payload);
                 setTotalItem({ ...res.data?.meta });
                 // loadStates()
@@ -159,7 +159,7 @@ const MenusPage = () => {
 
                         </Formik>
 
-                        <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="+ Add New" />
+                        <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="+ Add Special Menu" />
                     </div>
                     <div></div>
 
@@ -183,7 +183,7 @@ const MenusPage = () => {
                                 <td>{menu?.title}</td>
                                 <td>{convertToThousand(menu?.basePrice)}</td>
                                 <td>{moment(menu?.createdAt).format('dd-mm-y')}</td>
-                                <td><Image height={50} width={40} src={menu?.menuPic} /></td>
+                                <td><Image height={50} width={40} src={menu?.image} /></td>
                                 {/* <td><i className="bi bi-three-dots-vertical"></i></td> */}
                             </tr>))
                         }

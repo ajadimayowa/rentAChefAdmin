@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, ProgressBar } from "react-bootstrap";
+import { FormCheck, FormGroup, Modal, ProgressBar } from "react-bootstrap";
 import { Formik, Form, ErrorMessage, FieldArray, Field } from "formik";
 import * as Yup from "yup";
 import CustomButton from "../../custom-button/custom-button";
@@ -10,6 +10,8 @@ import { ReusableForm } from "../../forms/ReusableForm";
 import ReusableDropDownStates from "../../custom-input/ReusableDropDownStates";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
+import FormCheckLabel from "react-bootstrap/esm/FormCheckLabel";
+import MultiSelectDropdown from "../../custom-input/MultiSelectDropdown";
 
 
 interface IAuthModal {
@@ -18,36 +20,7 @@ interface IAuthModal {
     onLogin: () => void;
 }
 
-const chefCats = [
-    {
-        label:'Daily Chef',
-        value:'dailychef'
-    },
-    {
-        label:'Residential Chef',
-        value:'residentialchef'
-    },
-    {
-        label:'Alase',
-        value:'alase'
-    },
-    {
-        label:'Restaurant Consultation',
-        value:'consultatant'
-    },
-    {
-        label:'Event Catering',
-        value:'catrer'
-    },
-    {
-        label:'Culinary Trainer',
-        value:'trainer'
-    },
-    {
-        label:'Travel Chef',
-        value:'travelchef'
-    },
-]
+
 
 // --- Step Schemas ---
 const step1Schema = Yup.object({
@@ -88,7 +61,8 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
     const [loading, setLoading] = useState(false);
     const statesString = localStorage.getItem("states");
     const states = statesString ? JSON.parse(statesString) : [];
-    const chefCategories = useSelector((state:RootState)=>(state.statics.categories))
+    const chefCategories = useSelector((state:RootState)=>(state.statics.categories));
+    const chefServices = useSelector((state:RootState)=>(state.statics.services));
     const formatedStatesForDropDown = states.map((state: any) => ({
         label: state?.state,
         value: state?.state,
@@ -103,6 +77,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
         bio: "",
         phoneNumber: "",
         specialties: [],
+        servicesOffered: [],
         location: null,
         state: null,
         chefPic: null,
@@ -113,43 +88,57 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
 
     // --- Register user ---
     const registerUser = async (values: any) => {
-    setLoading(true);
-    try {
-        // Exclude temporary input field and convert state/location to strings
-        const { specialtyInput, ...rest } = values;
-        const processedValues = {
-            ...rest,
-            state: rest.state?.value || rest.state || "",
-            location: rest.location?.value || rest.location || "",
-            category: rest.category?.value || rest.category || "",
-            categoryName: rest.category?.label || rest.category || "",
-        };
+  console.log({ sent: values });
+  setLoading(true);
 
-        // Using FormData for file upload
-        const formPayload = new FormData();
+  try {
+    const { specialtyInput, ...rest } = values;
 
-        Object.keys(processedValues).forEach((key) => {
-            // If key is specialties, append as JSON string
-            if (key === "specialties") {
-                formPayload.append(key, JSON.stringify(processedValues[key]));
-            } else {
-                formPayload.append(key, processedValues[key]);
-            }
-        });
+    const processedValues = {
+      ...rest,
+      state: rest.state?.value || rest.state || "",
+      location: rest.location?.value || rest.location || "",
+      category: rest.category?.value || rest.category || "",
+      categoryName: rest.category?.label || rest.category || "",
+    };
 
-        const res = await api.post("chef/register", formPayload, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
+    const formPayload = new FormData();
 
-        console.log("User registered:", res.data);
-        toast.success("Chef registered successfully!");
-        off();
-    } catch (error: any) {
-        toast.error(error?.data?.message || "Something went wrong");
-        console.error(error);
-    } finally {
-        setLoading(false);
-    }
+   Object.entries(processedValues).forEach(([key, value]) => {
+  if (value === undefined || value === null) return;
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => {
+      formPayload.append(`${key}[]`, String(item));
+    });
+    return;
+  }
+
+  if (value instanceof Blob) {
+    formPayload.append(key, value);
+    return;
+  }
+
+  if (typeof value === "object") {
+    formPayload.append(key, JSON.stringify(value));
+    return;
+  }
+
+  formPayload.append(key, String(value));
+});
+
+    const res = await api.post("chef/register", formPayload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    toast.success("Chef registered successfully!");
+    off();
+  } catch (error: any) {
+    toast.error(error?.data?.message || "Something went wrong");
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
 };
 
     // --- Step handlers ---
@@ -295,6 +284,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                             chefPic: formData.chefPic,
                             password: formData.password,
                             bio: formData.bio,
+                            servicesOffered:[]
                         }}
                         validationSchema={step3Schema}
                         onSubmit={(values) => registerUser({ ...formData, ...values })}
@@ -336,6 +326,17 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                                     id="category"
                                 />
                                 <ErrorMessage name="category" component="div" className="text-danger small mt-1" />
+
+                                <div className="mt-3">
+                                    <MultiSelectDropdown
+                                    options={chefServices }
+                                    label="Services offered"
+                                    value={values.servicesOffered}
+                                    onChange={(v)=>setFieldValue('servicesOffered',v)}
+                                    />
+                                   
+
+                                </div>
 
                                     {/* Password */}
                                     <ReusableInputs icon2="bi bi-eye-slash" label="Set Password" placeholder="Enter password" inputType="password" name="password" id="password" />

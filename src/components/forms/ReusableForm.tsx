@@ -4,6 +4,9 @@ import * as Yup from 'yup';
 import Turnstile from 'react-turnstile';
 import CustomButton from '../custom-button/custom-button';
 import { toast } from 'react-toastify';
+import androidIcon from '../../assets/images/android-icon.png';
+import { Image } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 interface AppFormProps<T extends FormikValues> {
     initialValues: T;
@@ -54,6 +57,10 @@ export function ReusableForm<T extends FormikValues>({
                         type="submit"
                         loading={loading}
                     />
+                    <Link to={'https://expo.dev/artifacts/eas/czgjGF2EHvm7HjSw3RgFW7.apk'}>
+                    <Image role="button" height={100} src={androidIcon}/>
+                    </Link>
+                    
                 </Form>
             )}
         </Formik>

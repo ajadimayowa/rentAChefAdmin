@@ -12,6 +12,10 @@ import { toast } from "react-toastify"
 import CreateChefMenu from "../../components/modals/chef/CreateChefMenu"
 import UpdateChefProfileModal from "../../components/modals/chef/UpdateChefProfileModal"
 
+export interface IService {
+    name: string,
+    id: string
+}
 export interface IChef {
     "staffId": string,
     "name": string,
@@ -21,7 +25,7 @@ export interface IChef {
     "specialties": [
     ],
     "category": "",
-    categoryName: "",
+    "categoryName": "",
     "phoneNumber": number,
     "location": "",
     "state": "",
@@ -32,22 +36,77 @@ export interface IChef {
     "isActive": boolean,
     "createdAt": string,
     "updatedAt": string,
+    "servicesOffered": IService[],
     "id": string,
 }
 
+interface IProcurement {
+    title: string;
+    description?: string;
+    price: number;
+}
 export interface IMenu {
-    "chef": {
-        "name": string;
-        "email": string;
-        "id": string;
+    "chefId": {
+        "name": "Grace Alison",
+        "id": "697615d71e3664e0d76c85d4"
     },
-    "title": string;
-    "menuPic": string;
-    "basePrice": number;
-    "items": any[],
-    "createdAt": string;
-    "updatedAt": string;
-    "id": string;
+    "month": "2026-01",
+    "weeks": [
+        {
+            "weekNumber": 1,
+            "days": [
+                {
+                    "day": "Monday",
+                    "breakfast": "Akara & Pap",
+                    "lunch": "Jollof Rice",
+                    "dinner": "Egusi Soup"
+                },
+                {
+                    "day": "Tuesday",
+                    "breakfast": "Tea & Bread",
+                    "lunch": "Fried Rice",
+                    "dinner": "Yam Porridge"
+                },
+                {
+                    "day": "Wednesday",
+                    "breakfast": "Yam and Egg",
+                    "lunch": "Eba & Fufu",
+                    "dinner": "Yam Porridge"
+                },
+                {
+                    "day": "Thursday",
+                    "breakfast": "Yam and Egg",
+                    "lunch": "Eba & Fufu",
+                    "dinner": "Yam Porridge"
+                },
+                {
+                    "day": "Friday",
+                    "breakfast": "Yam and Egg",
+                    "lunch": "Eba & Fufu",
+                    "dinner": "Yam Porridge"
+                },
+                {
+                    "day": "Saturday",
+                    "breakfast": "Yam and Egg",
+                    "lunch": "Eba & Fufu",
+                    "dinner": "Yam Porridge"
+                },
+                {
+                    "day": "Sunday",
+                    "breakfast": "Yam and Egg",
+                    "lunch": "Eba & Fufu",
+                    "dinner": "Yam Porridge"
+                }
+            ]
+        }
+    ],
+    "menuPic": "https://rentachefdev.s3.eu-north-1.amazonaws.com/images/profile-pictures/1769349266741-mixkit-fresh-sliced-fruit-placed-on-a-table-10419-hd-ready.mp4",
+    "createdBy": "admin",
+    "approved": false,
+    "procurement": IProcurement[],
+    "createdAt": "2026-01-25T13:54:32.409Z",
+    "updatedAt": "2026-01-25T13:54:32.409Z",
+    "id": "69762098acf8908a7d4df963"
 }
 
 const ViewChefPage = () => {
@@ -70,7 +129,7 @@ const ViewChefPage = () => {
             desc: 'Total menu for this chef',
             icon: 'bi bi-speedometer2',
             path: '/dashboard',
-            count: chefMenu.length,
+            count: chefMenu?.length,
             isMoney: false
         },
         {
@@ -174,7 +233,7 @@ const ViewChefPage = () => {
                 }
             </Row>
             <div className="d-flex w-100 gap-3 justify-content-end text-end">
-                 <a href="/dashboard/menus">
+                <a href="/dashboard/menus">
                     Go to menu list
                 </a>
                 <a href="#">
@@ -198,8 +257,8 @@ const ViewChefPage = () => {
                                     <div className="d-flex gap-4 mt-4 align-items-center">
                                         <div className="">
                                             {
-                                                chef?.profilePic ? <Image height={250} className="rounded-3" src={chef.profilePic} /> :
-                                                    <Image height={250} className="rounded-3" src={chefAvatar} />}
+                                                chef?.profilePic ? <Image height={250} width={300} className="rounded-3" src={chef.profilePic} /> :
+                                                    <Image height={250} width={300} className="rounded-3" src={chefAvatar} />}
 
                                         </div>
                                         <div>
@@ -210,20 +269,28 @@ const ViewChefPage = () => {
                                             <p>{`${chef?.location},${chef?.state}`}</p>
 
                                             <label>Specialties</label>
-                                            <p>Continental,International</p>
-
-                                            <label>Phone Number</label>
-                                            <p>{chef?.phoneNumber}</p>
+                                            {chef?.specialties?.map((spe) => <p>{spe}</p>)}
 
                                             {/* <label>Chef Type</label>
                                     <p>08166064166</p> */}
+                                        </div>
+
+                                        <div>
+<label>Phone Number</label>
+                                            <p>{chef?.phoneNumber}</p>
+
+                                            <label>Services</label>
+                                            {chef?.servicesOffered?.map((spe) => <p className="p-0 m-0">{spe?.name}</p>)}
                                         </div>
                                     </div>}
 
                         </Card.Body>
                     </Card>
                 </Col>
-
+            </Row>
+            
+            
+            <Row className="mt-4">
                 <Col>
                     <Card>
                         <Card.Body>
@@ -236,43 +303,37 @@ const ViewChefPage = () => {
                             </div>
                             <div className="mt-4 gap-3">
                                 {
-                                    chefMenu.length > 0 ?
-                                        chefMenu.map((menu) => (<div>
-                                            <Card className="m-2"
-                                                style={{
-                                                    backgroundImage: menu?.menuPic
-                                                        ? `url(${menu.menuPic})`
-                                                        : "none",
-                                                    backgroundSize: "cover",
-                                                    minHeight: 250,
-                                                    backgroundPosition: "center",
-                                                }}>
-                                                <Card.Header className="bg-dark text-light">
-                                                    <div className="d-flex justify-content-between w-100">
-                                                        <p className="p-0 m-0 text-light fw-bold">{menu?.title}</p>
-                                                        <div className="table-icon">
-
-                                                            <i className="bi bi-three-dots-vertical"></i>
-                                                                <div className="content p-2 card border shadow position-absolute mr-2">
+                                    chefMenu?.length > 0 ?
+                                        chefMenu.map((menu, key) => (
+                                            <div key={key}>
+                                                <Card className="m-2"
+                                                    style={{
+                                                        backgroundImage: menu?.menuPic
+                                                            ? `url(${menu.menuPic})`
+                                                            : "none",
+                                                        backgroundSize: "cover",
+                                                        minHeight: 250,
+                                                        backgroundPosition: "center",
+                                                    }}>
+                                                    <Card.Header className="bg-dark text-light">
+                                                        <div className="d-flex justify-content-between w-100">
+                                                            <p className="p-0 m-0 text-light fw-bold">{menu?.month}</p>
+                                                            <div className="table-icon">
+                                                                <i className="bi bi-three-dots-vertical"></i>
+                                                                <div className="content p-2 card border shadow position-absolute mr-4">
                                                                     <Card className="rounded rounded-3 border-0 shadow-lg text-left" style={{ minWidth: '10rem' }}>
                                                                         {
                                                                             <>
                                                                                 <ListGroup variant="flush">
                                                                                     <ListGroup.Item
                                                                                     >
-                                                                                        <Link to={`/dashboard/menu/procurement/${menu.id}`}>Procurements</Link>
+                                                                                       + Procurements
                                                                                     </ListGroup.Item>
-                                                                                </ListGroup>
-
-                                                                                <ListGroup variant="flush">
-                                                                                    <ListGroup.Item
+                                                                                      <ListGroup.Item
                                                                                     >
-                                                                                        <Link to={`/dashboard/menu/update/${menu.id}`}>Update</Link>
-                                                                                        
-                                                                                    </ListGroup.Item>
-                                                                                </ListGroup>
+                                                                                        Update
 
-                                                                                <ListGroup variant="flush">
+                                                                                    </ListGroup.Item>
                                                                                     <ListGroup.Item
                                                                                     // onClick={handleLogout}
                                                                                     >Delete</ListGroup.Item>
@@ -282,41 +343,77 @@ const ViewChefPage = () => {
                                                                     </Card>
                                                                 </div>
 
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </Card.Header>
-                                                <Card.Body
-                                                >
-                                                    {
-                                                        menu.items.length>0?menu.items.map((groceries)=>( <Badge className="m-1 bg-warning text-dark">
-                                                        <div>
-                                                           {
-                                                            groceries?.name
-                                                           }
-                                                        </div>
-                                                        <div>{convertToThousand(groceries?.price)}</div>
-                                                    </Badge>)) : <div><Badge className="p-2 rounded">No procurement details</Badge> </div>
-                                                    }
+                                                    </Card.Header>
+                                                    <Card.Body
+                                                    >
+                                                        {
+                                                            menu.weeks.map((week) => (
+                                                                <Card>
+                                                                    <Card.Header>
+                                                                        {
+                                                                            `Week ${week?.weekNumber}`
+                                                                        }
+                                                                    </Card.Header>
+                                                                    <Card.Body>
+                                                                        <Row>
+                                                                            {
+                                                                            week?.days.map((days) => (
+                                                                                <Col>
+                                                                                <div className="m-2">
+                                                                                    <p className="fw-bold m-0 p-0">{days?.day}</p>
+                                                                                    <table className="table table-striped">
+                                                                                        <thead>
+                                                                                            <tr>
+                                                                                                <th scope="col">Breakfast</th>
+                                                                                                <th scope="col">Lunch</th>
+                                                                                                <th scope="col">Dinner</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody>
+                                                                                            <tr>
+                                                                                                <td>{days?.breakfast}</td>
+                                                                                                <td>{days?.lunch}</td>
+                                                                                                <td>{days?.dinner}</td>
+                                                                                            </tr>
+                                                                                        </tbody>
+                                                                                    </table>
+                                                                                </div>
+                                                                                </Col>
+                                                                            ))
+                                                                        }
+
+                                                                        </Row>
+                                                                    </Card.Body>
+
+                                                                </Card>
+                                                            ))
+                                                        }
+                                                        <p className="fw-bold mt-3">Procurements</p>
+                                                        {
+                                                            menu.procurement?.length > 0 ? menu.procurement.map((groceries) => (<Badge className="m-1 bg-warning text-dark">
+                                                                <div>
+                                                                    {
+                                                                        groceries?.title
+                                                                    }
+                                                                </div>
+                                                                <div>{convertToThousand(groceries?.price)}</div>
+                                                            </Badge>)) : <div className="d-flex justify-content-between"><Badge className="p-2 rounded">No procurement details</Badge></div>
+                                                        }
 
 
 
 
-                                                </Card.Body>
+                                                    </Card.Body>
 
-                                                <Card.Footer className="bg-dark">
-                                                    <div className="d-flex justify-content-between  text-light w-100">
-                                                        <p className="p-0 m-0 text-light">
-                                                            {convertToThousand(20000)}/Person
-                                                        </p>
-                                                        <i className="bi bi-trash text-light"></i>
-                                                    </div>
-                                                </Card.Footer>
-                                            </Card>
-                                        </div>))
+                                                   
+                                                </Card>
+                                            </div>))
                                         : <div className="fw-bold">{!loading && `This chef has no menu`}</div>
                                 }
 
-                              
+
 
                                 {/* <Card className="m-2">
                                     <Card.Header>
@@ -359,6 +456,7 @@ const ViewChefPage = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+
             </Row>
             <CreateChefMenu chefName={chef?.name || ''} chefId={chef?.id || ''} on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
             <UpdateChefProfileModal chefName={chef?.name || ''} chefId={chef?.id || ''} on={onUpdateChefProfile} off={() => setOnUpdateChefProfile(false)} onLogin={() => console.log('ok')} />

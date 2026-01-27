@@ -1,6 +1,7 @@
 import { Badge, Col, Container, Image, Row } from "react-bootstrap";
 import './adminLogin.css';
 import ownerImg from '../../assets/images/rentAChefOwnerWeb.png';
+import androidIcon from '../../assets/images/android-icon.png';
 import adminLogo from '../../assets/images/rentAChefAdminLogo.png';
 import { ErrorMessage, Formik } from "formik";
 import { ReusableForm } from "../../components/forms/ReusableForm";
@@ -14,7 +15,7 @@ import api from "../../app/api";
 import { toast } from "react-toastify";
 import { setUserData } from "../../features/auth/authSlice";
 import { loadStates } from "../../utils/helpers";
-import { setCategories } from "../../features/statics/staticsSlice";
+import { setCategories, setServices } from "../../features/statics/staticsSlice";
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -35,6 +36,7 @@ const AdminLoginPage = () => {
             localStorage.setItem('userId',res?.data?.payload?.id);
             dispatch(setUserData(res?.data?.payload));
             dispatch(setCategories(res?.data?.payload?.formattedCategories));
+            dispatch(setServices(res?.data?.payload?.formattedServices));
             navigate('/dashboard')
             toast.success('Login Successful!')
             // setUserEmail(values.email);
@@ -59,13 +61,13 @@ const AdminLoginPage = () => {
     return (
         <div className="home-container">
             <div className="left">
-                <h3 style={{ fontWeight: '900', fontSize: '28px' }}>
+                {/* <h3 style={{ fontWeight: '900', fontSize: '28px' }}>
                     Fine Dining At Your
                     Door step.
-                </h3>
-                <div className="w-100 d-flex align-items-center justify-content-center">
+                </h3> */}
+                {/* <div className="w-100 d-flex align-items-center justify-content-center">
                     <Image src={ownerImg} />
-                </div>
+                </div> */}
 
             </div>
             <div className="right ">
@@ -124,6 +126,7 @@ const AdminLoginPage = () => {
 
                             </ReusableForm>
                         </>
+                        
                     }
 
                     {
@@ -206,11 +209,10 @@ const AdminLoginPage = () => {
                                         className="text-danger small mt-1"
                                     />
                                 </div>
-
-
                             </ReusableForm>
                         </>
                     }
+
 
                 </div>
 

@@ -27,6 +27,7 @@ import AddProcurementPage from '../pages/dashboard/AddProcurementPage';
 import UpdateMenuPage from '../pages/dashboard/UpdateMenuPage';
 import BookingsPage from '../pages/dashboard/BookingsPage';
 import ViewMenuPage from '../pages/dashboard/ViewMenuPage';
+import ViewServicePage from '../pages/dashboard/ViewServicePage';
 
 
 const AppRouter = () => {
@@ -38,14 +39,11 @@ const AppRouter = () => {
         <Route path="/search" element={<ProductSearchPage />} />
         <Route path="/user-search" element={<UserSearchPage />} />
         <Route path='*' element={<NotFound />} />
-        <Route path='/ads' element={<AllAdsPage />} />
-        <Route path='/ad/:id' element={<ViewAdPage />} />
-        <Route path='/category/:categoryId' element={<CategoryProductsPage />} />
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
           <Route index element={<DashboardPage />} />
           <Route path="admins" element={<AdminPage />} />
 
-          <Route path="menus" element={<MenusPage />} />
+          <Route path="menus" element={<MenusPage/>} />
           <Route path="menu/:id" element={<ViewMenuPage />} />
           <Route path="menu/procurement/:id" element={<AddProcurementPage />} />
           <Route path="menu/update/:id" element={<UpdateMenuPage />} />
@@ -55,6 +53,8 @@ const AppRouter = () => {
           <Route path="chef/:id" element={<ViewChefsPage />} />
           <Route path='customers' element={<CustomersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="service/:id" element={<ViewServicePage />} />
+          <Route path="chef-category/:id" element={<ViewChefsPage />} />
         </Route>
       </Routes>
     </Router>

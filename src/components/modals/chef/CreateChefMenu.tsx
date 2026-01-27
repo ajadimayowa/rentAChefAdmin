@@ -111,7 +111,7 @@ const CreateChefMenu: React.FC<IAuthModal> = ({ on, chefName, chefId, off, onLog
         <Modal size="lg" show={on} onHide={off} centered>
             <Modal.Header closeButton>
                 <Modal.Title className="d-flex gap-3">
-                    {`Create Menu For Chef ${chefName.split(" ")[1]} `}
+                    {`Create Menu For Chef ${chefName.split(" ")[0]} `}
                 </Modal.Title>
             </Modal.Header>
 
