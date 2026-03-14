@@ -28,6 +28,8 @@ import UpdateMenuPage from '../pages/dashboard/UpdateMenuPage';
 import BookingsPage from '../pages/dashboard/BookingsPage';
 import ViewMenuPage from '../pages/dashboard/ViewMenuPage';
 import ViewServicePage from '../pages/dashboard/ViewServicePage';
+import UserLogin from '../pages/public/UserLogin';
+import SuccessfulPayment from '../pages/public/SuccessfulPayment';
 
 
 const AppRouter = () => {
@@ -35,10 +37,13 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public Routes: Accessible without authentication */}
-        <Route path="/" element={<AdminLoginPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />}/>
+        <Route path="/payment-succesful" element={<SuccessfulPayment />}/>
+        <Route path="/" element={<UserLogin/>}/>
         <Route path="/search" element={<ProductSearchPage />} />
         <Route path="/user-search" element={<UserSearchPage />} />
         <Route path='*' element={<NotFound />} />
+        
         <Route path="/dashboard" element={<RouteProtector><DashboardLayout /></RouteProtector>}>
           <Route index element={<DashboardPage />} />
           <Route path="admins" element={<AdminPage />} />

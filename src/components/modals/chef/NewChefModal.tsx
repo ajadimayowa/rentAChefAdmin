@@ -169,6 +169,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
                 {step === 1 && (
                     <ReusableForm
                         buttonTitle={"Next"}
+                        fromLoginPage={false}
                         loading={loading}
                         initialValues={{
                             staffId: formData.staffId,

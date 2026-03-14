@@ -17,7 +17,7 @@ import { setUserData } from "../../features/auth/authSlice";
 import { loadStates } from "../../utils/helpers";
 import { setCategories, setServices } from "../../features/statics/staticsSlice";
 
-const AdminLoginPage = () => {
+const UserLogin = () => {
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState(1);
     const [userEmail, setUserEmail] = useState("");
@@ -29,11 +29,11 @@ const AdminLoginPage = () => {
     const loginAdmin = async (values: any) => {
         setLoading(true);
         try {
-            const res = await api.post("/admin/login", values);
+            const res = await api.post("/login", values);
             console.log("Login response:", res.data);
             loadStates()
-            localStorage.setItem('userToken',res?.data?.token);
-            localStorage.setItem('userId',res?.data?.payload?.id);
+            localStorage.setItem('userToken', res?.data?.token);
+            localStorage.setItem('userId', res?.data?.payload?.id);
             dispatch(setUserData(res?.data?.payload));
             dispatch(setCategories(res?.data?.payload?.formattedCategories));
             dispatch(setServices(res?.data?.payload?.formattedServices));
@@ -45,7 +45,7 @@ const AdminLoginPage = () => {
         } catch (error) {
             console.error(error);
             setLoading(false);
-             toast.error('Invalid Credentials')
+            toast.error('Invalid Credentials')
         }
     };
 
@@ -86,7 +86,7 @@ const AdminLoginPage = () => {
                             >
                                 <div className="d-flex flex-row justify-content-between">
                                     <h5 className="text-primary mb-5">
-                                        Admin Login
+                                        Customer Login
                                     </h5>
                                     {/* <div>
                                         <Badge onClick={() => setCurrentStep(2)} className="bg-info rounded p-2" role="button"> +Create New Chef</Badge>
@@ -127,7 +127,7 @@ const AdminLoginPage = () => {
 
                             </ReusableForm>
                         </>
-                        
+
                     }
 
                     {
@@ -166,7 +166,7 @@ const AdminLoginPage = () => {
                                 </div>
 
 
-                                 <div>
+                                <div>
                                     <ReusableInputs
                                         name="name"
                                         inputType="text-input"
@@ -222,4 +222,4 @@ const AdminLoginPage = () => {
         </div>
     )
 }
-export default AdminLoginPage;
+export default UserLogin;

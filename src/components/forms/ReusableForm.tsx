@@ -13,6 +13,7 @@ interface AppFormProps<T extends FormikValues> {
     validationSchema: Yup.ObjectSchema<any>;
     loading: boolean;
     buttonTitle:string;
+    fromLoginPage?:boolean;
     onSubmit: (values: T, token: string, formikHelpers: FormikHelpers<T>) => void | Promise<void>;
     children: React.ReactNode;
 }
@@ -21,6 +22,7 @@ export function ReusableForm<T extends FormikValues>({
     initialValues,
     validationSchema,
     onSubmit,
+    fromLoginPage,
     children,
     loading,
     buttonTitle
@@ -57,9 +59,9 @@ export function ReusableForm<T extends FormikValues>({
                         type="submit"
                         loading={loading}
                     />
-                    <Link to={'https://expo.dev/artifacts/eas/czgjGF2EHvm7HjSw3RgFW7.apk'}>
+                    {fromLoginPage&&<Link to={'https://expo.dev/artifacts/eas/czgjGF2EHvm7HjSw3RgFW7.apk'}>
                     <Image role="button" height={100} src={androidIcon}/>
-                    </Link>
+                    </Link>}
                     
                 </Form>
             )}
