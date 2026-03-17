@@ -1,7 +1,8 @@
 // src/api/axiosInstance.ts
 import axios from 'axios';
 
-const baseURL = process.env.REACT_APP_API_BASE_URL
+const rawBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api/v1';
+const baseURL = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 
 const axiosInstance = axios.create({
   baseURL,
