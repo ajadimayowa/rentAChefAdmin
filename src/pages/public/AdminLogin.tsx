@@ -1,7 +1,5 @@
 import { Badge, Col, Container, Image, Row } from "react-bootstrap";
 import './adminLogin.css';
-import ownerImg from '../../assets/images/rentAChefOwnerWeb.png';
-import androidIcon from '../../assets/images/android-icon.png';
 import adminLogo from '../../assets/images/rentAChefAdminLogo.png';
 import { ErrorMessage, Formik } from "formik";
 import { ReusableForm } from "../../components/forms/ReusableForm";
@@ -9,13 +7,14 @@ import CustomInput from "../../components/custom-input/CustormInput";
 import * as Yup from "yup";
 import ReusableInputs from "../../components/custom-input/ReusableInputs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import api from "../../app/api";
 import { toast } from "react-toastify";
 import { setUserData } from "../../features/auth/authSlice";
 import { loadStates } from "../../utils/helpers";
 import { setCategories, setServices } from "../../features/statics/staticsSlice";
+import androidIcon from '../../assets/images/android-icon.png';
 
 const AdminLoginPage = () => {
     const [loading, setLoading] = useState(false);
@@ -31,9 +30,9 @@ const AdminLoginPage = () => {
         try {
             const res = await api.post("/admin/login", values);
             console.log("Login response:", res.data);
-            loadStates()
             localStorage.setItem('userToken',res?.data?.token);
             localStorage.setItem('userId',res?.data?.payload?.id);
+            loadStates();
             dispatch(setUserData(res?.data?.payload));
             dispatch(setCategories(res?.data?.payload?.formattedCategories));
             dispatch(setServices(res?.data?.payload?.formattedServices));
@@ -70,9 +69,15 @@ const AdminLoginPage = () => {
                 </div> */}
 
             </div>
-            <div className="right ">
-                <Image src={adminLogo} height={28} />
-                <div className="form-container d-flex p-4 align-items-center">
+            <div className="right d-flex justify-content-start align-items-start flex-column">
+                <div className="w-100 d-flex justify-content-between align-items-center">
+                     <Image src={adminLogo} height={28} />
+                <Link to={'https://expo.dev/artifacts/eas/czgjGF2EHvm7HjSw3RgFW7.apk'}>
+                                    <Image role="button" height={50} src={androidIcon}/>
+                                    </Link>
+                </div>
+               
+                <div className="form-container d-flex p-4 align-items-center w-75">
                     {
                         currentStep == 1 &&
                         <>

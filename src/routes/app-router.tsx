@@ -1,20 +1,11 @@
 // src/routes/AppRouter.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import HomePage from '../pages/public/HomePage';
-import UserProfilePage from '../pages/dashboard/ProfilePage';
 import RouteProtector from '../components/RouteProtector';
 import DashboardLayout from '../components/DashboardLayout';
-import FavoritesPage from '../pages/dashboard/Favorites';
-import PostAdPage from '../pages/dashboard/PostAdPage';
-import MessagesPage from '../pages/dashboard/MessagesPage';
-import ViewAdPage from '../pages/public/ViewAdInformation';
 import NotFound from '../pages/public/NotFound';
 import ProductSearchPage from '../pages/public/ProductSearchPage';
-import CategoryProductsPage from '../pages/public/CategoryProductsPage';
-import MyAds from '../pages/dashboard/MyAds';
 import UserSearchPage from '../pages/public/UserSearchPage';
-import AllAdsPage from '../pages/public/AllAdsPage';
 import AdminLoginPage from '../pages/public/AdminLogin';
 import DashboardPage from '../pages/dashboard';
 import AdminPage from '../pages/dashboard/AdminsPage';
@@ -30,6 +21,11 @@ import ViewMenuPage from '../pages/dashboard/ViewMenuPage';
 import ViewServicePage from '../pages/dashboard/ViewServicePage';
 import UserLogin from '../pages/public/UserLogin';
 import SuccessfulPayment from '../pages/public/SuccessfulPayment';
+import Booking from '../pages/dashboard/Booking';
+import Customer from '../pages/dashboard/Customer';
+import ViewServicePricingPage from '../pages/dashboard/ViewServicePricingPage';
+import QuotesPage from '../pages/dashboard/QuotesPage';
+import Notifications from '../pages/dashboard/Notifications';
 
 
 const AppRouter = () => {
@@ -37,9 +33,9 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Public Routes: Accessible without authentication */}
+        <Route path="/" element={<UserLogin/>}/>
         <Route path="/admin-login" element={<AdminLoginPage />}/>
         <Route path="/payment-succesful" element={<SuccessfulPayment />}/>
-        <Route path="/" element={<UserLogin/>}/>
         <Route path="/search" element={<ProductSearchPage />} />
         <Route path="/user-search" element={<UserSearchPage />} />
         <Route path='*' element={<NotFound />} />
@@ -54,11 +50,16 @@ const AppRouter = () => {
           <Route path="menu/update/:id" element={<UpdateMenuPage />} />
 
           <Route path="bookings" element={<BookingsPage />} />
+          <Route path="booking/:id" element={<Booking/>} />
           <Route path="chefs" element={<ChefsPage />} />
           <Route path="chef/:id" element={<ViewChefsPage />} />
           <Route path='customers' element={<CustomersPage />} />
+          <Route path='quotes' element={<QuotesPage />} />
+          <Route path='notifications' element={<Notifications />} />
+          <Route path='customer/:id' element={<Customer />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="service/:id" element={<ViewServicePage />} />
+          <Route path="service-pricing/:id" element={<ViewServicePricingPage />} />
           <Route path="chef-category/:id" element={<ViewChefsPage />} />
         </Route>
       </Routes>

@@ -29,7 +29,7 @@ const DashboardPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [dboard, setDBboard] = useState<IDBoard>();
-    const [limit,setLimit] = useState(10);
+    const [limit, setLimit] = useState(10);
     const infoCardData = [
         {
             id: '1',
@@ -59,13 +59,9 @@ const DashboardPage = () => {
 
     ]
 
-    const chartData = [
-        { name: 'Jan', users: 120 },
-        { name: 'Feb', users: 210 },
-        { name: 'Mar', users: 180 },
-        { name: 'Apr', users: 260 },
-        { name: 'May', users: 300 },
-    ];
+    // chart data comes from the admin dashboard payload (last 6 months)
+    // fallback to empty array while loading or if API returns nothing
+    const chartData = dboard?.bookings ?? [];
 
     const fetchAdmin = async () => {
         setLoading(true);
@@ -99,7 +95,7 @@ const DashboardPage = () => {
                 <a href="/dashboard/menus">
                     + Manage Menu
                 </a>
-                
+
                 <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="Create New Chef" />
 
             </div>}
@@ -112,7 +108,7 @@ const DashboardPage = () => {
             <Row className="mt-4">
 
                 {
-                    infoCardData.map((card) => (<Col>
+                    infoCardData.map((card) => (<Col key={card.id}>
                         <Card>
                             <Card.Body>
                                 <p className="fw-bold m-0 p-0">

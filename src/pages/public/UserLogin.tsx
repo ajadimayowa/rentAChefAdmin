@@ -9,7 +9,7 @@ import CustomInput from "../../components/custom-input/CustormInput";
 import * as Yup from "yup";
 import ReusableInputs from "../../components/custom-input/ReusableInputs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import api from "../../app/api";
 import { toast } from "react-toastify";
@@ -71,8 +71,13 @@ const UserLogin = () => {
 
             </div>
             <div className="right ">
-                <Image src={adminLogo} height={28} />
-                <div className="form-container d-flex p-4 align-items-center">
+                <div className="w-100 d-flex justify-content-between align-items-center">
+                     <Image src={adminLogo} height={28} />
+                <Link to={'https://expo.dev/artifacts/eas/czgjGF2EHvm7HjSw3RgFW7.apk'}>
+                                    <Image role="button" height={80} src={androidIcon}/>
+                                    </Link>
+                </div>
+                <div className="form-container d-flex p-4 align-items-center w-100">
                     {
                         currentStep == 1 &&
                         <>

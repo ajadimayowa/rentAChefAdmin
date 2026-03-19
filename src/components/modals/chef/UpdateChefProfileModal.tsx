@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, ProgressBar } from "react-bootstrap";
 import { Formik, Form, ErrorMessage, FieldArray, Field } from "formik";
 import * as Yup from "yup";
@@ -10,6 +10,7 @@ import { ReusableForm } from "../../forms/ReusableForm";
 import ReusableDropDownStates from "../../custom-input/ReusableDropDownStates";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../store/store";
+import MultiSelectDropdown from "../../custom-input/MultiSelectDropdown";
 
 
 interface IAuthModal {
@@ -27,12 +28,19 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
     const statesString = localStorage.getItem("states");
     const states = statesString ? JSON.parse(statesString) : [];
     const chefCategories = useSelector((state: RootState) => (state.statics.categories))
+    const chefServices = useSelector((state: RootState) => (state.statics.services))
     const formatedStatesForDropDown = states.map((state: any) => ({
         label: state?.state,
         value: state?.state,
         cities: state?.localGovernmentAreas,
     }));
+    // normalize categories to { label, value } for react-select
+    const normalizedChefCategories = (chefCategories || []).map((c: any) => ({
+        label: c?.name || c?.title || c?.label || String(c),
+        value: c?.id || c?._id || c?.value || String(c),
+    }));
     const [selectedStateCities, setSelectedStateCities] = useState<string[]>([]);
+    const [chefData, setChefData] = useState<any | null>(null);
 
     interface MenuItem {
          staffId: "",
@@ -60,6 +68,27 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
         basePrice: null,
         category:null
     };
+
+    useEffect(() => {
+        const loadChef = async () => {
+            if (!on || !chefId) return;
+            try {
+                const res = await api.get(`chef/${chefId}`);
+                const payload = res?.data?.payload || res?.data;
+                const chef = payload?.chef || payload;
+                setChefData(chef || null);
+                // set selected state cities if state exists
+                if (chef?.state) {
+                    const stateObj = formatedStatesForDropDown.find((s: any) => s.value === chef.state);
+                    setSelectedStateCities(stateObj?.cities || []);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        loadChef();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [on, chefId]);
 
     const validationSchema = Yup.object({
         chef: Yup.string()
@@ -109,21 +138,46 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
         // Using FormData for file upload
         const formPayload = new FormData();
 
-        Object.keys(processedValues).forEach((key) => {
-            // If key is specialties, append as JSON string
-            if (key === "specialties") {
-                formPayload.append(key, JSON.stringify(processedValues[key]));
-            } else {
-                formPayload.append(key, processedValues[key]);
+        Object.entries(processedValues).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+
+            if (Array.isArray(value)) {
+                // append arrays as repeated fields
+                value.forEach((item) => formPayload.append(`${key}[]`, typeof item === 'object' ? JSON.stringify(item) : String(item)));
+                return;
             }
+
+            if (value instanceof Blob) {
+                formPayload.append(key, value);
+                return;
+            }
+
+            if (typeof value === 'object') {
+                formPayload.append(key, JSON.stringify(value));
+                return;
+            }
+
+            formPayload.append(key, String(value));
         });
 
-        const res = await api.put(`chef/update/${chefId}`, formPayload, {
+        // use correct update endpoint
+        const res = await api.put(`chef/${chefId}`, formPayload, {
             headers: { "Content-Type": "multipart/form-data" },
         });
 
-        console.log("User registered:", res.data);
-        toast.success("Chef registered successfully!");
+        console.log("User updated:", res.data);
+        // If servicesOffered were provided, call chefServices/create to register them
+        try {
+            const serviceIds = processedValues.servicesOffered || [];
+            if (Array.isArray(serviceIds) && serviceIds.length > 0) {
+                await api.post(`chefServices/create`, { chefId, serviceIds });
+            }
+        } catch (err) {
+            console.warn('Failed to register chef services:', err);
+            // non-fatal — continue
+        }
+
+        toast.success("Chef updated successfully!");
         off();
     } catch (error: any) {
         toast.error(error?.data?.message || "Something went wrong");
@@ -144,7 +198,25 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
 
             <Modal.Body>
                 <Formik
-                    initialValues={initialValues}
+                    enableReinitialize
+                    initialValues={{
+                        staffId: chefData?.staffId || "",
+                        name: chefData?.name || "",
+                        phoneNumber: chefData?.phoneNumber || "",
+                        chef: chefId,
+                        state: chefData?.state ? { label: chefData.state, value: chefData.state } : null,
+                        location: chefData?.location ? { label: chefData.location, value: chefData.location } : null,
+                                                category: chefData?.category
+                                                        ? (typeof chefData.category === 'string'
+                                                                ? { label: chefData.categoryName || chefData.category, value: chefData.category }
+                                                                : { label: chefData.category?.name || chefData.category?.label || chefData.categoryName || String(chefData.category), value: chefData.category?.id || chefData.category?._id || String(chefData.category) }
+                                                            )
+                                                        : null,
+                        specialties: chefData?.specialties || [],
+                        specialtyInput: "",
+                        servicesOffered: chefData?.servicesOffered?.map((s: any) => (typeof s === 'string' ? s : (s.id || s._id || (s._id ? String(s._id) : '')))) || [],
+                        chefPic: null,
+                    }}
                     // validationSchema={validationSchema}
                     onSubmit={(values) => updateChef(values)}
                 >
@@ -184,7 +256,7 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
                                 <ErrorMessage name="location" component="div" className="text-danger small mt-1" />
 
                                 <ReusableDropDownStates
-                                    options={chefCategories}
+                                    options={normalizedChefCategories}
                                     label="Category"
                                     placeholder="Select chef category"
                                     inputType="text"
@@ -193,38 +265,53 @@ const UpdateChefProfileModal: React.FC<IAuthModal> = ({ on, chefName, chefId, of
                                 />
                                 <ErrorMessage name="category" component="div" className="text-danger small mt-1" />
 
-                            {/* <p className="p-0 m-0 mt-4 fw-bold">Select Profile Picture</p>
-                             <div className="d-flex gap-3 align-items-center">
-                                <label htmlFor="menuPic" style={{ cursor: "pointer" }}>
-                                    <i className="bi bi-camera fs-1"></i>
-                                </label>
+                                <div className="mt-3">
+                                    {/** Normalize services to shape {id,name} for the dropdown */}
+                                    {(() => {
+                                        const serviceOptions = (chefServices || []).map((s: any) => ({ id: s.id || s._id || String(s), name: s.name || s.title || s.label || String(s) }));
+                                            return (
+                                            <MultiSelectDropdown
+                                                options={serviceOptions}
+                                                label="Services offered"
+                                                value={(values.servicesOffered || []).map((s: any) => (typeof s === 'object' ? (s.id || s._id || String(s)) : String(s)))}
+                                                onChange={(v: any) => setFieldValue('servicesOffered', (v || []).map((item: any) => (typeof item === 'object' ? (item.id || item.value || String(item)) : String(item))))}
+                                            />
+                                        );
+                                    })()}
+                                </div>
 
-                                <input
-                                    id="menuPic"
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: "none" }}
-                                    onChange={(event) => {
-                                        const file = event.currentTarget.files?.[0];
-                                        if (file) {
-                                            setFieldValue("menuPic", file);
-                                        }
-                                    }}
-                                />
+                                <div className="mb-2 mt-3">
+                                    <label className="form-label">Chef Specialty</label>
+                                    <div className="d-flex gap-2">
+                                        <Field name="specialtyInput" className="form-control" placeholder="Enter specialty e.g. Pastry Chef" />
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary"
+                                            onClick={() => {
+                                                if (!values.specialtyInput || !values.specialtyInput.trim()) return;
+                                                setFieldValue("specialties", [...(values.specialties || []), values.specialtyInput.trim()]);
+                                                setFieldValue("specialtyInput", "");
+                                            }}
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
 
-                                {values.menuPic ? (
-                                    <img
-                                        src={URL.createObjectURL(values.menuPic)}
-                                        alt="Selected menu"
-                                        width={60}
-                                        height={60}
-                                        className="rounded"
-                                        style={{ objectFit: "cover" }}
-                                    />
-                                ) : (
-                                    <p className="mb-0 text-muted"></p>
-                                )}
-                            </div> */}
+                                <FieldArray name="specialties">
+                                    {({ remove }) => (
+                                        <ul className="list-group mb-3">
+                                            {(values.specialties || []).map((item: any, index: number) => (
+                                                <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                                                    {item}
+                                                    <button type="button" className="btn btn-sm btn-danger" onClick={() => remove(index)}>
+                                                        ✕
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </FieldArray>
 
                             <CustomButton loading={loading} className="w-100 mt-3 text-light" title="Save" type="submit" />
                         </Form>

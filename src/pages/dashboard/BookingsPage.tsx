@@ -1,9 +1,10 @@
-import { Button, Card, Col, Image, Row, Spinner } from "react-bootstrap"
-import { convertToThousand } from "../../utils/helpers"
+import { Button, Card, Col, Image, Row, Spinner, ListGroup } from "react-bootstrap"
+import { convertToThousand, cutString } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
 import { useEffect, useState } from "react"
+import ConfirmModal from "../../components/modals/ConfirmModal"
 import ReusableInputs from "../../components/custom-input/ReusableInputs"
 import { Form, Formik } from "formik"
 import { useNavigate } from "react-router-dom"
@@ -28,9 +29,11 @@ const BookingsPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [refData, setRefData] = useState(false);
-    const [chefs, setChefs] = useState<any[]>([]);
+    const [bookings, setBookings] = useState<any[]>([]);
     const [bySearch, setBySearch] = useState(false);
     const [searchedName, setSearchedName] = useState('')
+    const [filter, setFilter] = useState<'all'|'upcoming'|'ongoing'|'completed'>('all')
+    const [searchBy, setSearchBy] = useState<'user'|'chef'>('user')
 
 
     const handlePagination = (value: number) => {
@@ -78,56 +81,102 @@ const BookingsPage = () => {
 
     ]
 
-    const searchChef = async () => {
+    const searchBookings = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/chefs?name=${searchedName}&limit=${limit}&page=${page}`);
-            // setChefs(res?.data?.payload);
-            // setTotalItem({ ...res.data?.meta });
-            // loadStates()
-            // localStorage.setItem('userToken',res?.data?.token);
-            // localStorage.setItem('userId',res?.data?.payload?.id);
-            // dispatch(setUserData(res?.data?.payload))
-            // navigate('/dashboard')
-            // toast.success('Login Successful!')
-            // setUserEmail(values.email);
+            // choose query param according to searchBy selection
+            const q = new URLSearchParams();
+            if (searchBy === 'user') q.append('searchByUserName', searchedName);
+            else q.append('searchByChefName', searchedName);
+            q.append('limit', String(limit));
+            q.append('page', String(page));
+            const res = await api.get(`/bookings?${q.toString()}`);
+            setBookings(res?.data?.payload || []);
+            if (res?.data?.pagination) {
+                const p = res.data.pagination;
+                setTotalItem({ total: p.total, limit: p.limit, page: p.page, totalPages: p.pages });
+            }
             setLoading(false);
-            // setStep(2); // proceed to OTP verification
         } catch (error) {
             console.error(error);
             setLoading(false);
-            toast.error('Invalid Credentials')
+            toast.error('Network error')
         }
     }
-    const fetchChefs = async () => {
+
+    const fetchBookings = async (filter?: string) => {
         setLoading(true);
         if (bySearch) {
-            searchChef()
-        } else {
-            try {
-                const res = await api.get(`/chefs?limit=${limit}&page=${page}`);
-                // setChefs(res?.data?.payload);
-                // setTotalItem({ ...res.data?.meta });
-                // loadStates()
-                // localStorage.setItem('userToken',res?.data?.token);
-                // localStorage.setItem('userId',res?.data?.payload?.id);
-                // dispatch(setUserData(res?.data?.payload))
-                // navigate('/dashboard')
-                // toast.success('Login Successful!')
-                // setUserEmail(values.email);
-                setLoading(false);
-                // setStep(2); // proceed to OTP verification
-            } catch (error) {
-                console.error(error);
-                setLoading(false);
-                toast.error('Invalid Credentials')
+            searchBookings()
+            return;
+        }
+        try {
+            // try common endpoints; if backend differs, adjust accordingly
+            const query: any = { limit, page };
+            // map frontend filter to backend status values
+            if (filter && filter !== 'all') {
+                if (filter === 'upcoming') query.status = 'confirmed';
+                else if (filter === 'ongoing') query.status = 'ongoing';
+                else if (filter === 'completed') query.status = 'completed';
+                else query.status = filter;
             }
+            const qs = Object.keys(query).map(k => `${k}=${query[k]}`).join('&');
+            let res;
+            try {
+                res = await api.get(`/booking/bookings?${qs}`);
+            } catch (err) {
+                res = await api.get(`/bookings?${qs}`);
+            }
+            setBookings(res?.data?.payload || []);
+            if (res?.data?.pagination) {
+                const p = res.data.pagination;
+                setTotalItem({ total: p.total, limit: p.limit, page: p.page, totalPages: p.pages });
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+            toast.error('Network error')
         }
     };
 
     useEffect(() => {
-        fetchChefs()
+        fetchBookings()
     }, [refData])
+    useEffect(() => {
+        // when filter changes, reset to first page and fetch
+        setPage(1);
+        fetchBookings(filter);
+    }, [filter])
+    const [confirmShow, setConfirmShow] = useState(false)
+    const [confirmData, setConfirmData] = useState<{ id?: string; name?: string } | null>(null)
+
+    const promptDeleteBooking = (id?: string, name?: string) => {
+        if (!id) return;
+        setConfirmData({ id, name });
+        setConfirmShow(true);
+    }
+
+    const performDeleteBooking = async () => {
+        if (!confirmData?.id) return;
+        setConfirmShow(false);
+        try {
+            setLoading(true);
+            try {
+                await api.delete(`/booking/${confirmData.id}`);
+            } catch (err) {
+                await api.delete(`/bookings/${confirmData.id}`);
+            }
+            toast.success('Booking deleted');
+            setRefData(!refData);
+            setLoading(false);
+            setConfirmData(null);
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+            toast.error('Failed to delete booking');
+        }
+    }
     return (
         <div>
             <div className="">
@@ -153,6 +202,20 @@ const BookingsPage = () => {
 
                         </Formik>
 
+                        <div className="ms-2">
+                            <select className="form-select form-select-sm" value={searchBy} onChange={(e) => setSearchBy(e.currentTarget.value as 'user'|'chef')}>
+                                <option value="user">Search user</option>
+                                <option value="chef">Search chef</option>
+                            </select>
+                        </div>
+
+                        <div className="ms-3">
+                            <Button variant={filter === 'all' ? 'primary' : 'outline-primary'} size="sm" onClick={() => setFilter('all')}>All</Button>{' '}
+                            <Button variant={filter === 'upcoming' ? 'primary' : 'outline-primary'} size="sm" onClick={() => setFilter('upcoming')}>Upcoming</Button>{' '}
+                            <Button variant={filter === 'ongoing' ? 'primary' : 'outline-primary'} size="sm" onClick={() => setFilter('ongoing')}>Ongoing</Button>{' '}
+                            <Button variant={filter === 'completed' ? 'primary' : 'outline-primary'} size="sm" onClick={() => setFilter('completed')}>Completed</Button>
+                        </div>
+
                         {/* <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="+ Add New" /> */}
                     </div>
                     <div></div>
@@ -164,33 +227,57 @@ const BookingsPage = () => {
                         <tr>
                             <th className="bg-primary text-light" scope="col">#</th>
                             <th className="bg-primary text-light" scope="col">Booking Id</th>
+                            <th className="bg-primary text-light" scope="col">Type</th>
                             <th className="bg-primary text-light" scope="col">Customer name</th>
+                            <th className="bg-primary text-light" scope="col">Chef</th>
                             <th className="bg-primary text-light" scope="col">State</th>
                             <th className="bg-primary text-light" scope="col">Location</th>
                             <th className="bg-primary text-light" scope="col">Created At</th>
+                            <th className="bg-primary text-light" scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="text-center"><td colSpan={8}>{loading && <Spinner />}</td></tr>
+                        <tr className="text-center"><td colSpan={9}>{loading && <Spinner />}</td></tr>
                         {
-                            chefs.map((chef, index: number) => (<tr role="button" onClick={() => navigate(`/dashboard/chef/${chef?.id}`)}>
-                                <th scope="row">{index + 1}</th>
-                                <td>{chef?.staffId}</td>
-                                <td>{chef?.name}</td>
-                                <td>{chef?.state}</td>
-                                <td>{chef?.location}</td>
-                                <td>{moment(chef?.createdAt).format('dd-mm-y')}</td>
-                                {/* <td><Image height={50} width={40} src={chef?.profilePic} /></td> */}
-                                {/* <td><i className="bi bi-three-dots-vertical"></i></td> */}
-                            </tr>))
+                            bookings.map((b, index: number) => (
+                                <tr role="button" key={b?.id} onClick={() => navigate(`/dashboard/booking/${b?.id}`)}>
+                                    <th scope="row">{index + 1}</th>
+                                    <td>{cutString(b?.id, 5)}</td>
+                                    <td>{b?.bookingType || '—'}</td>
+                                    <td>{b?.clientId?.fullName || b?.clientId?.firstName || b?.clientId?.email || '—'}</td>
+                                    <td>{b?.chefId?.name || '—'}</td>
+                                    
+                                    <td>{b?.clientId?.location?.state || '—'}</td>
+                                    <td>{b?.clientId?.location?.city || b?.clientId?.location?.home || '—'}</td>
+                                    <td>{moment(b?.createdAt).format('D/MM/Y')}</td>
+                                    <td className="table-icon">
+                                        <i className="bi bi-three-dots-vertical"></i>
+                                        <div className="content p-2 card border shadow position-absolute mr-2">
+                                            <Card className="rounded rounded-3 border-0 shadow-lg text-left" style={{ minWidth: '10rem' }}>
+                                                <ListGroup variant="flush">
+                                                    <ListGroup.Item onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/booking/${b?.id}`) }}>
+                                                        View
+                                                    </ListGroup.Item>
+                                                    <ListGroup.Item onClick={(e) => { e.stopPropagation()}}>
+                                                        Edit
+                                                    </ListGroup.Item>
+                                                    <ListGroup.Item onClick={(e) => { e.stopPropagation(); promptDeleteBooking(b?.id, b?.clientId?.fullName || b?.clientId?.firstName) }}>
+                                                        Delete
+                                                    </ListGroup.Item>
+                                                </ListGroup>
+                                            </Card>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
                         }
 
-                         <tr className="text-center"><td colSpan={8}>{!loading && chefs?.length<1 &&'No Data Available'}</td></tr>
+                        <tr className="text-center"><td colSpan={9}>{!loading && bookings?.length < 1 && 'No Data Available'}</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            {chefs.length > 0 && (
+            {bookings.length > 0 && (
                 <nav className="mt-5" aria-label="Page navigation example">
                     <ul className="pagination justify-content-center">
                         <Button onClick={handlePrevious} className="page-item" disabled={totalItem.page == 1}>
@@ -218,6 +305,15 @@ const BookingsPage = () => {
                 </nav>
             )}
             <NewChefModal on={onCreateChef} off={() => {setOnCreateChef(false); window.location.reload(); setRefData(!refData)}} onLogin={() => console.log('ok')} />
+            <ConfirmModal
+                show={confirmShow}
+                title={'Delete Booking'}
+                body={confirmData?.name ? `Delete "${confirmData.name}"? This action cannot be undone.` : 'Are you sure you want to delete this booking?'}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={performDeleteBooking}
+                onCancel={() => setConfirmShow(false)}
+            />
         </div>
     )
 }

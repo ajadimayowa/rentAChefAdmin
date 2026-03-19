@@ -3,7 +3,12 @@ import { convertToThousand } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
-import { useEffect, useState } from "react"
+import AddServiceModal from "../../components/modals/settings/AddServiceModal"
+import AddCategoryModal from "../../components/modals/settings/AddCategoryModal"
+import BroadcastModal from "../../components/modals/settings/BroadcastModal"
+import PushNotificationModal from "../../components/modals/settings/PushNotificationModal"
+import { use, useEffect, useState } from "react"
+import ConfirmModal from "../../components/modals/ConfirmModal"
 import { toast } from "react-toastify"
 import api from "../../app/api"
 import { useNavigate } from "react-router-dom"
@@ -12,6 +17,10 @@ import moment from "moment"
 
 const SettingsPage = () => {
     const [onCreateChef, setOnCreateChef] = useState(false)
+    const [showAddService, setShowAddService] = useState(false)
+    const [showAddCategory, setShowAddCategory] = useState(false)
+    const [showBroadcast, setShowBroadcast] = useState(false)
+    const [showPush, setShowPush] = useState(false)
     const [loading, setLoading] = useState(false);
     const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
@@ -28,6 +37,8 @@ const SettingsPage = () => {
     const [refData, setRefData] = useState(false);
     const [services, setServices] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
+    const [serviceEdit, setServiceEdit] = useState<any | null>(null);
+    const [categoryEdit, setCategoryEdit] = useState<any | null>(null);
     const [bySearch, setBySearch] = useState(false);
     const [searchedName, setSearchedName] = useState('')
 
@@ -126,6 +137,43 @@ const SettingsPage = () => {
         fetchCategories()
     }, [refData])
 
+    const [confirmShow, setConfirmShow] = useState(false)
+    const [confirmData, setConfirmData] = useState<{ id?: string; kind?: 'service' | 'category'; name?: string } | null>(null)
+
+    const handleDeleteService = (id?: string, name?: string) => {
+        if (!id) return;
+        setConfirmData({ id, kind: 'service', name });
+        setConfirmShow(true);
+    };
+
+    const handleDeleteCategory = (id?: string, name?: string) => {
+        if (!id) return;
+        setConfirmData({ id, kind: 'category', name });
+        setConfirmShow(true);
+    };
+
+    const performDelete = async () => {
+        if (!confirmData || !confirmData.id) return;
+        setConfirmShow(false);
+        try {
+            setLoading(true);
+            if (confirmData.kind === 'service') {
+                await api.delete(`service/${confirmData.id}`);
+                toast.success('Service deleted');
+            } else {
+                await api.delete(`category/${confirmData.id}`);
+                toast.success('Category deleted');
+            }
+            setRefData(!refData);
+            setLoading(false);
+            setConfirmData(null);
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+            toast.error('Failed to delete');
+        }
+    };
+
     
     const infoCardData = [
         {
@@ -150,7 +198,7 @@ const SettingsPage = () => {
             label: 'Notifications',
             desc: 'No of active chefs',
             icon: 'bi bi-bell-fill',
-            path: '/chefs',
+            path: '/dashboard/notifications',
             count: '2'
         },
 
@@ -162,15 +210,15 @@ const SettingsPage = () => {
                 {/* <a href="/dashboard/menus">
                     + Add Menu
                 </a> */}
-                <CustomIconButton onClick={() => setOnCreateChef(true)} className="text-light" title="Send Broadcast" />
-                <CustomIconButton variant="outline" onClick={() => setOnCreateChef(true)} className="border border-3" title="Push notification" />
+                <CustomIconButton onClick={() => setShowBroadcast(true)} className="text-light" title="Send Broadcast" />
+                <CustomIconButton variant="outline" onClick={() => setShowPush(true)} className="border border-3" title="Push notification" />
 
             </div>
             <Row className="mt-4">
 
                 {
                     infoCardData.map((card) => (<Col>
-                        <Card className="rounded-3">
+                        <Card onClick={()=>navigate(card.path)} className="rounded-3">
                             <Card.Body>
                                 <p className="fw-bold m-0 p-0">
                                     {
@@ -192,11 +240,11 @@ const SettingsPage = () => {
 
                 <Col>
                     <Card className="rounded-3">
-                        <Card.Header className="d-flex justify-content-between">
+                            <Card.Header className="d-flex justify-content-between">
                             <p className="fw-bold m-0 p-0">
                                 Available Services
                             </p>
-                            <Button>Add New</Button>
+                            <Button onClick={() => setShowAddService(true)}>Add New</Button>
                         </Card.Header>
                         <Card.Body>
                             <table className="table table-striped table-hover">
@@ -222,15 +270,22 @@ const SettingsPage = () => {
                                                 <Card className="rounded rounded-3 border-0 shadow-lg text-left" style={{ minWidth: '10rem' }}>
                                                     {
                                                         <>
+                                                        <ListGroup variant="flush">
+                                                                <ListGroup.Item onClick={(e)=>{e.stopPropagation();  navigate(`/dashboard/service-pricing/${service?.id}`) }}
+                                                                >
+                                                                    View pricing
+                                                                </ListGroup.Item>
+                                                            </ListGroup>
+
                                                             <ListGroup variant="flush">
-                                                                <ListGroup.Item
+                                                                <ListGroup.Item onClick={(e)=>{ e.stopPropagation(); setShowAddService(true); setServiceEdit({ id: service?.id, name: service?.name, description: service?.description, isActive: service?.isActive }) }}
                                                                 >
                                                                     Update
                                                                 </ListGroup.Item>
                                                             </ListGroup>
 
                                                             <ListGroup variant="flush">
-                                                                <ListGroup.Item
+                                                                <ListGroup.Item onClick={(e)=>{ e.stopPropagation(); handleDeleteService(service?.id) }}
                                                                 >
                                                                     Delete
 
@@ -260,11 +315,11 @@ const SettingsPage = () => {
 
                 <Col>
                     <Card className="rounded-3">
-                        <Card.Header className="d-flex justify-content-between">
+                            <Card.Header className="d-flex justify-content-between">
                             <p className="fw-bold m-0 p-0">
                                 Chef Categories
                             </p>
-                            <Button>Add New</Button>
+                            <Button onClick={() => setShowAddCategory(true)}>Add New</Button>
                         </Card.Header>
                         <Card.Body>
                             <table className="table table-striped table-hover">
@@ -279,7 +334,7 @@ const SettingsPage = () => {
                                 <tbody>
                                     {
                                         categories.map((service,index)=>(
-                                            <tr>
+                                                <tr>
                                         <th scope="row">{index + 1}</th>
                                         <td>{service?.name}</td>
                                         <td>{moment(service?.createdAt).format('D/MM/Y')}</td>
@@ -291,18 +346,18 @@ const SettingsPage = () => {
                                                     {
                                                         <>
                                                             <ListGroup variant="flush">
-                                                                <ListGroup.Item
+                                                                <ListGroup.Item onClick={(e)=>{ e.stopPropagation(); setShowAddCategory(true); setCategoryEdit({ id: service?.id, name: service?.name, description: service?.description }) }}
                                                                 >
                                                                     Update
                                                                 </ListGroup.Item>
                                                             </ListGroup>
 
                                                             <ListGroup variant="flush">
-                                                                <ListGroup.Item
-                                                                >
-                                                                    Delete
+                                                                    <ListGroup.Item onClick={(e)=>{ e.stopPropagation(); handleDeleteCategory(service?.id) }}
+                                                                    >
+                                                                        Delete
 
-                                                                </ListGroup.Item>
+                                                                    </ListGroup.Item>
                                                             </ListGroup>
                                                         </>
                                                     }
@@ -324,6 +379,19 @@ const SettingsPage = () => {
             </Row>
 
             <NewChefModal on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
+            <AddServiceModal initial={serviceEdit ?? undefined} on={showAddService} off={() => { setShowAddService(false); setServiceEdit(null); }} onDone={() => setRefData(!refData)} />
+            <AddCategoryModal initial={categoryEdit ?? undefined} on={showAddCategory} off={() => { setShowAddCategory(false); setCategoryEdit(null); }} onDone={() => setRefData(!refData)} />
+            <BroadcastModal on={showBroadcast} off={() => setShowBroadcast(false)} />
+            <PushNotificationModal on={showPush} off={() => setShowPush(false)} />
+            <ConfirmModal
+                show={confirmShow}
+                title={confirmData?.kind === 'service' ? 'Delete Service' : 'Delete Category'}
+                body={confirmData?.name ? `Delete "${confirmData.name}"? This action cannot be undone.` : 'Are you sure you want to delete this item?'}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={performDelete}
+                onCancel={() => setConfirmShow(false)}
+            />
         </div>
     )
 }

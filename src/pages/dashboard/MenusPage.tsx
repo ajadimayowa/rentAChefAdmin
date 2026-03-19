@@ -170,6 +170,8 @@ const MenusPage = () => {
                         <tr>
                             <th className="bg-primary text-light" scope="col">#</th>
                             <th className="bg-primary text-light" scope="col">Name</th>
+                            <th className="bg-primary text-light" scope="col">No of Dish</th>
+                            <th className="bg-primary text-light" scope="col">Min No of Guests</th>
                             <th className="bg-primary text-light" scope="col">Base Price</th>
                             <th className="bg-primary text-light" scope="col">Created At</th>
                             <th className="bg-primary text-light" scope="col">Image</th>
@@ -181,7 +183,9 @@ const MenusPage = () => {
                             menus.map((menu, index: number) => (<tr role="button" onClick={() => navigate(`/dashboard/menu/${menu?.id}`)}>
                                 <th scope="row">{index + 1}</th>
                                 <td>{menu?.title}</td>
-                                <td>{convertToThousand(menu?.basePrice)}</td>
+                                <td>{menu?.numberOfDishes}</td>
+                                <td>{menu?.minimumGuests}</td>
+                                <td>{convertToThousand(menu?.price)}</td>
                                 <td>{moment(menu?.createdAt).format('dd-mm-y')}</td>
                                 <td><Image height={50} width={40} src={menu?.image} /></td>
                                 {/* <td><i className="bi bi-three-dots-vertical"></i></td> */}

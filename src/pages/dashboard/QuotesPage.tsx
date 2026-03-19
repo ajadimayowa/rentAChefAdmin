@@ -1,5 +1,5 @@
 import { Button, Card, Col, Row, Spinner } from "react-bootstrap"
-import { convertToThousand } from "../../utils/helpers"
+import { convertToThousand, cutString } from "../../utils/helpers"
 import IconButton from "../../components/custom-button/IconButton"
 import CustomIconButton from "../../components/custom-button/custom-icon-button"
 import NewChefModal from "../../components/modals/chef/NewChefModal"
@@ -12,7 +12,7 @@ import api from "../../app/api"
 import { toast } from "react-toastify"
 import moment from "moment"
 
-const CustomersPage = () => {
+const QuotesPage = () => {
     const [onCreateChef, setOnCreateChef] = useState(false);
     const [loading, setLoading] = useState(false);
     const [bySearch, setBySearch] = useState(false);
@@ -45,7 +45,7 @@ const CustomersPage = () => {
     const [userEmail, setUserEmail] = useState("");
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [chefs, setChefs] = useState<any[]>([])
+    const [quotes, setQuotes] = useState<any[]>([])
     const infoCardData = [
         {
             id: '1',
@@ -79,44 +79,44 @@ const CustomersPage = () => {
         setLoading(true)
        try {
             const res = await api.get(`/user/users?search=${userSearch}&limit=${limit}&page=${page}`);
-            setChefs(res?.data?.data);
-            setTotalItem({ ...res.data?.meta });
-            console.log("chefs:", res.data);
+            setQuotes(res?.data?.payload);
+            // setTotalItem({ ...res.data?.meta });
+            // console.log("chefs:", res.data);
             setLoading(false);
             // setStep(2); // proceed to OTP verification
         } catch (error) {
             console.error(error);
             setLoading(false);
-            toast.error('Invalid Credentials')
+            toast.error('Failed to fetch Quotes')
         }
     };
 
-    const fetchUsers = async () => {
+    const fetchQuotes = async () => {
         setLoading(true);
        if(bySearch){
 
        } else  try {
-            const res = await api.get(`/admin/users?limit=${limit}&page=${page}`);
-            setChefs(res?.data?.data);
-            setTotalItem({ ...res.data?.meta });
+            const res = await api.get(`/quotes`);
+            setQuotes(res?.data?.payload);
+            // setTotalItem({ ...res.data?.meta });
             console.log("chefs:", res.data);
             setLoading(false);
             // setStep(2); // proceed to OTP verification
         } catch (error) {
             console.error(error);
             setLoading(false);
-            toast.error('Invalid Credentials')
+            toast.error('Failed to fetch Quotes')
         }
     };
 
     useEffect(() => {
-        fetchUsers()
+        fetchQuotes();
     }, [refData])
     return (
         <div>
             <div className="">
-                <h5>All Customers</h5>
-                <p>Manage all customers from here.</p>
+                <h5>Customer Quotes</h5>
+                <p>Manage all quotes sent by customers from here.</p>
 
 
             </div>
@@ -147,28 +147,28 @@ const CustomersPage = () => {
                     <thead className="thead-light">
                         <tr>
                             <th className="bg-primary text-light" scope="col">#</th>
-                            <th className="bg-primary text-light" scope="col">Full name</th>
-                            <th className="bg-primary text-light" scope="col">Phone number</th>
-                            <th className="bg-primary text-light" scope="col">Created At</th>
-                            <th className="bg-primary text-light"></th>
+                            <th className="bg-primary text-light" scope="col">Title</th>
+                            <th className="bg-primary text-light" scope="col">Client</th>
+                            <th className="bg-primary text-light" scope="col">Description</th>
+                            <th className="bg-primary text-light" scope="col">Date Sent</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr role="button" className="text-center"><td colSpan={6}>{loading && <Spinner />}</td></tr>
                         {
-                            chefs.map((chef, index: number) => (
-                            <tr onClick={() => navigate(`/dashboard/customer/${chef?.id}`)}>
+                            quotes.map((quote, index: number) => (
+                            <tr >
                                 <th scope="row">{index + 1}</th>
-                                <td>{chef?.fullName}</td>
-                                <td>{chef?.phone}</td>
-                                <td>{moment(chef?.createdAt).format('ddd-M-y')}</td>
-                                <td><i className="bi bi-three-dots-vertical"></i></td>
+                                <td>{quote?.title}</td>
+                                <td>{quote?.clientId?.fullName}</td>
+                                <td>{cutString(quote?.description,30)}</td>
+                                <td>{moment(quote?.createdAt).format('ddd-M-y')}</td>
                             </tr>))
                         }
                     </tbody>
                 </table>
             </div>
-            {chefs.length > 0 && (
+            {quotes.length > 0 && (
                 <nav className="mt-5" aria-label="Page navigation example">
                     <ul className="pagination justify-content-center">
                         <Button onClick={handlePrevious} className="page-item" disabled={totalItem.page == 1}>
@@ -199,4 +199,4 @@ const CustomersPage = () => {
         </div>
     )
 }
-export default CustomersPage
+export default QuotesPage

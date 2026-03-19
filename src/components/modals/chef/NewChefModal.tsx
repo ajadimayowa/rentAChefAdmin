@@ -102,6 +102,12 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
       categoryName: rest.category?.label || rest.category || "",
     };
 
+    // Rename servicesOffered to serviceIds for the backend
+    if (processedValues.servicesOffered && Array.isArray(processedValues.servicesOffered)) {
+      processedValues.serviceIds = processedValues.servicesOffered;
+      delete processedValues.servicesOffered;
+    }
+
     const formPayload = new FormData();
 
    Object.entries(processedValues).forEach(([key, value]) => {
@@ -127,7 +133,7 @@ const NewChefModal: React.FC<IAuthModal> = ({ on, off, onLogin }) => {
   formPayload.append(key, String(value));
 });
 
-    const res = await api.post("chef/register", formPayload, {
+        const res = await api.post("/chef/create", formPayload, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 

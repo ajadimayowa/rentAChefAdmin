@@ -36,15 +36,19 @@ const CompanyMenuModal: React.FC<IAuthModal> = ({ on, chefName, chefId, off, onL
 
     interface MenuItem {
         title: string;
+        minimumGuests: number;
+        numberOfDishes: number;
         isDefault: boolean,
         menuPic: File | null;
-        basePrice: number | null;
+        price: number | null;
     }
     const initialValues: MenuItem = {
         title: "",
+        minimumGuests: 1,
+        numberOfDishes: 1,
         isDefault: true,
         menuPic: null,
-        basePrice: null,
+        price: null,
     };
 
     const validationSchema = Yup.object({
@@ -67,8 +71,16 @@ const CompanyMenuModal: React.FC<IAuthModal> = ({ on, chefName, chefId, off, onL
                 (value) =>
                     value instanceof File && value.size <= 2 * 1024 * 1024
             ),
+        minimumGuests: Yup.number()
+            .typeError("Minimum guests must be a number")
+            .min(1, "Minimum guests must be at least 1")
+            .required("Minimum guests is required"),
+        numberOfDishes: Yup.number()
+            .typeError("Number of dishes must be a number")
+            .min(1, "Number of dishes must be at least 1")
+            .required("Number of dishes is required"),
 
-        basePrice: Yup.number()
+        price: Yup.number()
             .nullable()
             .typeError("Base price must be a number")
             .min(0, "Base price cannot be negative")
@@ -87,7 +99,7 @@ const CompanyMenuModal: React.FC<IAuthModal> = ({ on, chefName, chefId, off, onL
                 formPayload.append(key, values[key]);
             });
 
-            const res = await api.post("menu/create", formPayload, {
+            const res = await api.post("specialMenu/create", formPayload, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
@@ -157,9 +169,15 @@ const CompanyMenuModal: React.FC<IAuthModal> = ({ on, chefName, chefId, off, onL
                             <ReusableInputs label="Menu name" placeholder="Enter name of menu" inputType="text" name="title" id="title" />
                             <ErrorMessage name="title" component="div" className="text-danger small mt-1" />
 
+                            <ReusableInputs label="Minimum guests" placeholder="Enter minimum number of guests" inputType="number-input" name="minimumGuests" id="minimumGuests" />
+                            <ErrorMessage name="minimumGuests" component="div" className="text-danger small mt-1" />
+
+                            <ReusableInputs label="Number of dishes" placeholder="Enter number of dishes" inputType="number-input" name="numberOfDishes" id="numberOfDishes" />
+                            <ErrorMessage name="numberOfDishes" component="div" className="text-danger small mt-1" />
+
                             {/* Phone number */}
-                            <ReusableInputs label="Base price (N)" placeholder="Enter base price" inputType="text" name="basePrice" id="basePrice" />
-                            <ErrorMessage name="basePrice" component="div" className="text-danger small mt-1" />
+                            <ReusableInputs label="Base price (N)" placeholder="Enter base price" inputType="text" name="price" id="basePrice" />
+                            <ErrorMessage name="price" component="div" className="text-danger small mt-1" />
 
                             <CustomButton loading={loading} className="w-100 mt-3 text-light" title="Save" type="submit" />
                         </Form>

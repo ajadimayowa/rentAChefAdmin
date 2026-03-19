@@ -53,6 +53,12 @@ const DashboardLayout: React.FC = () => {
         },
         {
             id:'4',
+            label:'Special Quotes',
+            icon:'bi bi-backpack',
+            path:'/dashboard/quotes'
+        },
+        {
+            id:'5',
             label:'Settings',
             icon:'bi bi-gear',
             path:'/dashboard/settings'
