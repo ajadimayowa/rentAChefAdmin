@@ -9,8 +9,7 @@ import chefAvatar from '../../assets/images/cookemoji.png'
 import { useDispatch } from "react-redux"
 import api from "../../app/api"
 import { toast } from "react-toastify"
-import CreateChefMenu from "../../components/modals/chef/CreateChefMenu"
-import UpdateChefProfileModal from "../../components/modals/chef/UpdateChefProfileModal"
+import EditSpecialMenu from "../../components/modals/menu/EditSpecialMenu"
 
 export interface IChef {
     "staffId": string,
@@ -54,6 +53,7 @@ const ViewMenuPage = () => {
     const [refData, setRefData] = useState(false)
     const [onAddProcurement, setOnAddProcuremt] = useState(false);
     const [onUpdateChefProfile, setOnUpdateChefProfile] = useState(false)
+    const [onEditSpecialMenu, setOnEditSpecialMenu] = useState(false)
     const params: any = useParams();
     const id = params?.id;
     const [loading, setLoading] = useState(false);
@@ -63,6 +63,9 @@ const ViewMenuPage = () => {
     const dispatch = useDispatch();
     const [menuInfo, setMenuInfo] = useState<any>()
     const [chefMenu, setChefMenu] = useState<IMenu[]>([])
+    const [reviews, setReviews] = useState<any[]>([])
+    const [reviewsMeta, setReviewsMeta] = useState<{ average?: number; total?: number }>({})
+    const [loadingReviews, setLoadingReviews] = useState(false)
     const infoCardData = [
         {
             id: '1',
@@ -87,7 +90,7 @@ const ViewMenuPage = () => {
     const fetchMenuInfo = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`menu/${id}`);
+            const res = await api.get(`specialMenu/${id}`);
             setMenuInfo(res?.data?.payload)
             // console.log("chefs:", res.data);
             // loadStates()
@@ -105,6 +108,22 @@ const ViewMenuPage = () => {
             toast.error('Invalid Credentials')
         }
     };
+
+    const fetchReviews = async () => {
+        if (!id) return;
+        setLoadingReviews(true);
+        try {
+            // backend route: GET /specialmenu/:menuId/ratings
+            const res = await api.get(`specialmenu/${id}/ratings`);
+            const payload = res?.data?.payload;
+            setReviews(payload?.items || []);
+            setReviewsMeta({ average: payload?.average, total: payload?.total });
+        } catch (error) {
+            console.error('Failed to fetch reviews', error);
+        } finally {
+            setLoadingReviews(false);
+        }
+    }
 
     // const fetchMenuInfo = async () => {
     //     // setLoading(true);
@@ -130,7 +149,8 @@ const ViewMenuPage = () => {
 
     useEffect(() => {
         fetchMenuInfo()
-    }, [refData])
+        fetchReviews()
+    }, [refData, id])
     return (
         <div>
             {/* <div className="d-flex justify-content-end">
@@ -179,18 +199,18 @@ const ViewMenuPage = () => {
                         <Card.Body>
                             <div className="d-flex justify-content-between">
                                 <p className="fw-bold m-0 p-0">
-                                    Menu Description
+                                    Special Menu Description
                                 </p>
 
-                                <Button onClick={() => setOnUpdateChefProfile(true)} variant="outline border">Update</Button>
+                                <Button onClick={() => setOnEditSpecialMenu(true)} variant="outline border">Update</Button>
                             </div>
                             {
                                 loading ? <Spinner size="sm" /> :
                                     <div className="d-flex gap-4 mt-4 align-items-center">
                                         <div className="">
                                             {
-                                                menuInfo?.profilePic ? <Image height={250} className="rounded-3" src={menuInfo?.menuPic} /> :
-                                                    <Image height={250} className="rounded-3" src={chefAvatar} />}
+                                                menuInfo?.image ? <Image height={200} width={250}  className="rounded-3" src={menuInfo?.image} /> :
+                                                    <Image height={200} className="rounded-3" src={chefAvatar} />}
 
                                         </div>
                                         <div>
@@ -198,8 +218,13 @@ const ViewMenuPage = () => {
                                             <p>{menuInfo?.title ?? '-'}</p>
 
                                             <label>Base price</label>
-                                            <p>{convertToThousand(menuInfo?.basePrice)}</p>
+                                            <p>{convertToThousand(menuInfo?.price)}</p>
 
+                                            <label>Min Guests</label>
+                                            <p>{menuInfo?.minimumGuests ?? '-'}</p>
+
+                                            <label>Number of dish</label>
+                                            <p>{menuInfo?.numberOfDishes ?? '-'}</p>
 
 
                                             <label>Description</label>
@@ -219,139 +244,44 @@ const ViewMenuPage = () => {
                         <Card.Body>
                             <div className="d-flex justify-content-between">
                                 <p className="fw-bold m-0 p-0">
-                                    Procurements
+                                    Review comments
                                 </p>
 
-                                <Button onClick={() => setOnAddProcuremt(true)} variant="outline border">Add Item</Button>
+                                    {/* <Button onClick={() => setOnAddProcuremt(true)} variant="outline border">Add Item</Button> */}
                             </div>
-                            <div className="mt-4 gap-3">
                                 {
-                                    menuInfo?.items?.length > 0 ?
-                                        menuInfo?.items.map((menu: any, index: number) => (<div>
-                                            <Card className="m-2"
-                                                style={{
-                                                    backgroundImage: menu?.menuPic
-                                                        ? `url(${menu.menuPic})`
-                                                        : "none",
-                                                    backgroundSize: "cover",
-                                                    minHeight: 250,
-                                                    backgroundPosition: "center",
-                                                }}>
-                                                <Card.Header className="bg-dark text-light">
-                                                    <div className="d-flex justify-content-between w-100">
-                                                        <p className="p-0 m-0 text-light fw-bold">{menu?.title}</p>
-                                                        <div className="table-icon">
-
-                                                            <i className="bi bi-three-dots-vertical"></i>
-                                                            <div className="content p-2 card border shadow position-absolute mr-2">
-                                                                <Card className="rounded rounded-3 border-0 shadow-lg text-left" style={{ minWidth: '10rem' }}>
-                                                                    {
-                                                                        <>
-                                                                            <ListGroup variant="flush">
-                                                                                <ListGroup.Item
-                                                                                >
-                                                                                    <Link to={`/dashboard/menu/procurement/${menu.id}`}>Procurements</Link>
-                                                                                </ListGroup.Item>
-                                                                            </ListGroup>
-
-                                                                            <ListGroup variant="flush">
-                                                                                <ListGroup.Item
-                                                                                >
-                                                                                    <Link to={`/dashboard/menu/update/${menu.id}`}>Update</Link>
-
-                                                                                </ListGroup.Item>
-                                                                            </ListGroup>
-
-                                                                            <ListGroup variant="flush">
-                                                                                <ListGroup.Item
-                                                                                // onClick={handleLogout}
-                                                                                >Delete</ListGroup.Item>
-                                                                            </ListGroup>
-                                                                        </>
-                                                                    }
-                                                                </Card>
-                                                            </div>
-
-                                                        </div>
-                                                    </div>
-                                                </Card.Header>
-                                                <Card.Body
-                                                >
-                                                    {
-                                                        menuInfo.items.length > 0 ? menuInfo.items.map((groceries: any) => (<Badge className="m-1 bg-warning text-dark">
+                                    loadingReviews ? (
+                                        <Spinner />
+                                    ) : (
+                                        <div className="mt-3">
+                                            <p className="mb-1"><strong>Average:</strong> {reviewsMeta?.average ? Number(reviewsMeta.average).toFixed(1) : '-'} <small className="text-muted">({reviewsMeta?.total || 0} reviews)</small></p>
+                                            <ListGroup>
+                                                {reviews?.length > 0 ? (
+                                                    reviews.map((r: any, idx: number) => (
+                                                        <ListGroup.Item key={idx} className="d-flex gap-3 align-items-start">
+                                                            <Image src={r?.userId?.profilePic || chefAvatar} width={40} height={40} rounded />
                                                             <div>
-                                                                {
-                                                                    groceries?.name
-                                                                }
+                                                                <div className="d-flex gap-2 align-items-center">
+                                                                    <strong>{r?.userId?.firstName || r?.userId?.fullName || 'User'}</strong>
+                                                                    <Badge bg="secondary">{r?.rating || '-'}</Badge>
+                                                                </div>
+                                                                <div className="small text-muted">{new Date(r?.createdAt).toLocaleString()}</div>
+                                                                <p className="mt-2 mb-0">{r?.review || ''}</p>
                                                             </div>
-                                                            <div>{convertToThousand(groceries?.price)}</div>
-                                                        </Badge>)) : <div><Badge className="p-2 rounded">No procurement details</Badge> </div>
-                                                    }
-
-
-
-
-                                                </Card.Body>
-
-                                                <Card.Footer className="bg-dark">
-                                                    <div className="d-flex justify-content-between  text-light w-100">
-                                                        <p className="p-0 m-0 text-light">
-                                                            {convertToThousand(20000)}/Person
-                                                        </p>
-                                                        <i className="bi bi-trash text-light"></i>
-                                                    </div>
-                                                </Card.Footer>
-                                            </Card>
-                                        </div>))
-                                        : <div className="fw-bold">{!loading && `This chef has no menu`}</div>
+                                                        </ListGroup.Item>
+                                                    ))
+                                                ) : (
+                                                    <ListGroup.Item className="text-center">No reviews yet</ListGroup.Item>
+                                                )}
+                                            </ListGroup>
+                                        </div>
+                                    )
                                 }
-
-
-
-                                {/* <Card className="m-2">
-                                    <Card.Header>
-                                        <div className="d-flex justify-content-between w-100">
-                                            <p className="p-0 m-0 fw-bold">Smoky Jollof</p>
-                                            <i className="bi bi-three-dots-vertical"></i>
-                                        </div>
-                                    </Card.Header>
-                                    <Card.Body>
-                                        <Badge className="m-1 bg-info">
-                                            <div>
-                                               Green pepper
-                                            </div>
-                                            <div>{convertToThousand(5000)}</div>
-                                        </Badge>
-
-                                        <Badge className="m-1 bg-info">
-                                            <div>
-                                                Goat meat
-                                            </div>
-                                            <div>{convertToThousand(5000)}</div>
-                                        </Badge>
-
-
-
-
-                                    </Card.Body>
-
-                                    <Card.Footer>
-                                      <div className="d-flex justify-content-between w-100">
-                                            <p className="p-0 m-0">
-                                                {convertToThousand(20000)}
-                                            </p>
-                                            <i className="bi bi-trash text-danger"></i>
-                                        </div>
-                                    </Card.Footer>
-                                </Card> */}
-                            </div>
-
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
-            {/* <CreateChefMenu chefName={chef?.name || ''} chefId={chef?.id || ''} on={onCreateChef} off={() => setOnCreateChef(false)} onLogin={() => console.log('ok')} />
-            <UpdateChefProfileModal chefName={chef?.name || ''} chefId={chef?.id || ''} on={onUpdateChefProfile} off={() => setOnUpdateChefProfile(false)} onLogin={() => console.log('ok')} /> */}
+            <EditSpecialMenu menu={menuInfo} on={onEditSpecialMenu} off={() => setOnEditSpecialMenu(false)} onSuccess={() => { setOnEditSpecialMenu(false); setRefData(!refData); }} />
         </div>
     )
 }

@@ -219,6 +219,7 @@ const ViewServicePricingPage = () => {
                 on={addNewServOptn}
                 off={() => { setAddNewServOpt(!addNewServOptn); setRefData(!refData) }}
                 service={servicePricing}
+                serviceId={id || ''}
                 onSuccess={() => console.log('')}
             />
         </>

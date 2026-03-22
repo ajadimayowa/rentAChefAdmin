@@ -11,6 +11,7 @@ interface AddServicePlanModalProps {
     on: boolean;
     off: () => void;
     service: any;
+    serviceId: string;
     onSuccess?: () => void;
 }
 
@@ -40,6 +41,7 @@ const AddServicePricingModal: React.FC<AddServicePlanModalProps> = ({
     on,
     off,
     service,
+    serviceId,
     onSuccess,
 }) => {
     const [loading, setLoading] = useState(false);
@@ -71,7 +73,7 @@ const AddServicePricingModal: React.FC<AddServicePlanModalProps> = ({
     const handleSubmit = async (values: FormValues) => {
         setLoading(true);
         try {
-            await api.post(`/servicePricing/create`, { ...values, chefCategoryId: values.chefCategoryId?.value });
+            await api.post(`/servicePricing/create`, { ...values, serviceId: serviceId, chefCategoryId: values.chefCategoryId?.value });
 
             toast.success("Pricing added successfully");
             onSuccess?.();
