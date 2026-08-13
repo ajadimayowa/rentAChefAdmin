@@ -6,7 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as Yup from 'yup';
 import { Button } from '../components/ui/Button';
-import { ApiError } from '../config/api';
+import { ApiError, setToken } from '../config/api';
 import { requestLoginOtp, verifyLoginOtp, type BackendUserType } from '../services/auth';
 import { roleHome, useAuthStore, type UserRole } from '../store/authStore';
 
@@ -250,6 +250,17 @@ export function Login() {
                   setFormError(null);
                   try {
                     const res = await verifyLoginOtp(email, values.otp);
+
+                    // The web portal is admin/chef only — customers use the mobile app.
+                    // verifyLoginOtp() already stashed the token for API calls; undo
+                    // that since we're not establishing a session for this actor.
+                    if (res.payload.userType === 'Customer') {
+                      setToken(null);
+                      toast.error('Unauthorized user. Please use the Rent a Chef app.');
+                      setStep('credentials');
+                      return;
+                    }
+
                     const user = {
                       id: res.payload.id,
                       name: res.payload.fullName,

@@ -1,67 +1,133 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
 import { Check, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Toolbar, FilterSelect } from '../../components/ui/Toolbar';
-import { Badge, statusTone } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { RowActions } from '../../components/ui/RowActions';
 import {
   FormGrid,
-  MultiSelectField,
+  ImageField,
+  MultiSelectSearchField,
   NumberField,
   SwitchField,
   TagsField,
   TextAreaField,
   TextField } from
 '../../components/form/Fields';
-import { useAdminData } from '../../contexts/AdminDataContext';
-import { formatCurrency, titleCase, uid } from '../../utils/format';
-import type { Package } from '../../types';
+import {
+  createAdminPackage,
+  deleteAdminPackage,
+  listAdminPackages,
+  updateAdminPackage,
+  type AdminPackage,
+  type PackageInput } from
+'../../services/admin/packageServices';
+import { listServices, type AdminService } from '../../services/admin/adminServices';
+import { listAdminMenus, type AdminMenu } from '../../services/admin/menuServices';
+import { convertToThousand } from '../../utils/format';
+import { ApiError } from '../../config/api';
+
+const errorMessage = (err: unknown, fallback: string): string =>
+err instanceof ApiError ? err.message : fallback;
+
+interface PackageFormValues {
+  id?: string;
+  title: string;
+  description: string;
+  price: number | '';
+  durationHours: number | '';
+  guests: number | '';
+  serviceIds: string[];
+  menus: string[];
+  perks: string[];
+  isActive: boolean;
+  packageImage: File | null;
+}
+
+const emptyPackageForm: PackageFormValues = {
+  title: '',
+  description: '',
+  price: '',
+  durationHours: 4,
+  guests: 2,
+  serviceIds: [],
+  menus: [],
+  perks: [],
+  isActive: true,
+  packageImage: null
+};
+
+const toFormValues = (pkg: AdminPackage): PackageFormValues => ({
+  id: pkg.id,
+  title: pkg.title,
+  description: pkg.description,
+  price: pkg.price,
+  durationHours: pkg.durationHours,
+  guests: pkg.guests,
+  serviceIds: pkg.services.map((s) => s.id),
+  menus: pkg.menus.map((m) => m.id),
+  perks: pkg.perks,
+  isActive: pkg.isActive,
+  packageImage: null
+});
 
 const schema = Yup.object({
-  name: Yup.string().required('Package name is required'),
+  title: Yup.string().required('Package name is required'),
   description: Yup.string().required('Add a description').max(200, 'Keep it under 200 characters'),
-  price: Yup.number().typeError('Enter a number').required('Price is required').min(1),
-  durationHours: Yup.number().typeError('Enter a number').required('Duration is required').min(1),
+  price: Yup.number().typeError('Enter a number').required('Price is required').min(0),
+  durationHours: Yup.number().typeError('Enter a number').required('Duration is required').min(0),
   guests: Yup.number().typeError('Enter a number').required('Guest count is required').min(1),
   serviceIds: Yup.array().of(Yup.string()).min(1, 'Select at least one service')
 });
 
-const emptyPackage: Package = {
-  id: '',
-  name: '',
-  description: '',
-  serviceIds: [],
-  menuIds: [],
-  price: 0,
-  durationHours: 4,
-  guests: 2,
-  perks: [],
-  status: 'active',
-  createdAt: new Date().toISOString().slice(0, 10)
-};
-
 export function Packages() {
-  const { packages, services, menus, savePackage, removePackage, lookup } = useAdminData();
+  const [packages, setPackages] = useState<AdminPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState<AdminService[]>([]);
+  const [menus, setMenus] = useState<AdminMenu[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
-  const [editing, setEditing] = useState<Package | null>(null);
-  const [deleting, setDeleting] = useState<Package | null>(null);
+  const [editing, setEditing] = useState<PackageFormValues | null>(null);
+  const [deleting, setDeleting] = useState<AdminPackage | null>(null);
 
-  const rows = useMemo(
-    () =>
-    packages.filter(
-      (p) =>
-      (status === 'all' || p.status === status) && (
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase()))
-    ),
-    [packages, search, status]
+  const loadPackages = () => {
+    setLoading(true);
+    listAdminPackages().
+    then(setPackages).
+    catch((err) => toast.error(errorMessage(err, 'Could not load packages.'))).
+    finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadPackages();
+    listServices().then((res) => setServices(res.payload)).catch(() => toast.error('Could not load services.'));
+    listAdminMenus({ limit: 200 }).
+    then((res) => setMenus(res.data)).
+    catch(() => toast.error('Could not load menus.'));
+  }, []);
+
+  const handleDelete = async (pkg: AdminPackage) => {
+    try {
+      await deleteAdminPackage(pkg.id);
+      setPackages((prev) => prev.filter((p) => p.id !== pkg.id));
+      toast.success(`${pkg.title} deleted.`);
+    } catch (err) {
+      toast.error(errorMessage(err, 'Could not delete package.'));
+    }
+  };
+
+  const rows = packages.filter(
+    (p) =>
+    (status === 'all' || (status === 'active') === p.isActive) && (
+    p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.description.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -70,11 +136,11 @@ export function Packages() {
         title="Packages"
         description="Bundle services, menus and perks into a single fixed-price offer."
         action={
-        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyPackage)}>
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyPackageForm)}>
             New package
           </Button>
         } />
-      
+
 
       <Card className="mb-6">
         <Toolbar search={search} onSearch={setSearch} placeholder="Search packages…">
@@ -87,15 +153,17 @@ export function Packages() {
             { value: 'active', label: 'Active' },
             { value: 'inactive', label: 'Inactive' }]
             } />
-          
+
         </Toolbar>
       </Card>
 
       {rows.length === 0 ?
       <Card className="px-6 py-16 text-center">
-          <p className="font-heading text-[15px] font-semibold text-ink-900">No packages found</p>
+          <p className="font-heading text-[15px] font-semibold text-ink-900">
+            {loading ? 'Loading packages…' : 'No packages found'}
+          </p>
           <p className="mt-1 text-sm text-ink-500">
-            Bundle a service with a menu to create your first package.
+            {loading ? 'Fetching the package catalogue.' : 'Bundle a service with a menu to create your first package.'}
           </p>
         </Card> :
 
@@ -104,10 +172,13 @@ export function Packages() {
         <Card key={pkg.id} className="flex flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-heading text-lg font-semibold text-ink-950">{pkg.name}</h3>
-                  <Badge tone={statusTone(pkg.status)}>{titleCase(pkg.status)}</Badge>
+                  <h3 className="font-heading text-lg font-semibold text-ink-950">{pkg.title}</h3>
+                  <Badge tone={pkg.isActive ? 'success' : 'neutral'}>{pkg.isActive ? 'Active' : 'Inactive'}</Badge>
                 </div>
-                <RowActions onEdit={() => setEditing(pkg)} onDelete={() => setDeleting(pkg)} />
+                <RowActions
+              onEdit={() => setEditing(toFormValues(pkg))}
+              onDelete={() => setDeleting(pkg)} />
+
               </div>
 
               <p className="mt-3 text-sm leading-relaxed text-ink-600">{pkg.description}</p>
@@ -116,7 +187,7 @@ export function Packages() {
                 <div>
                   <dt className="text-[11px] uppercase tracking-wide text-ink-400">Price</dt>
                   <dd className="mt-0.5 font-heading text-sm font-semibold text-ink-950">
-                    {formatCurrency(pkg.price)}
+                    {convertToThousand(pkg.price)}
                   </dd>
                 </div>
                 <div>
@@ -138,14 +209,14 @@ export function Packages() {
                   Includes
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {pkg.serviceIds.map((id) =>
-              <Badge key={id} tone="neutral">
-                      {lookup.serviceName(id)}
+                  {pkg.services.map((s) =>
+              <Badge key={s.id} tone="neutral">
+                      {s.name}
                     </Badge>
               )}
-                  {pkg.menuIds.map((id) =>
-              <Badge key={id} tone="brand">
-                      {lookup.menuName(id)}
+                  {pkg.menus.map((m) =>
+              <Badge key={m.id} tone="brand">
+                      {m.title}
                     </Badge>
               )}
                 </div>
@@ -171,62 +242,94 @@ export function Packages() {
         onClose={() => setEditing(null)}
         title={editing?.id ? 'Edit package' : 'New package'}
         description="Packages appear as a single bookable offer with a fixed price.">
-        
+
         {editing ?
         <Formik
           initialValues={editing}
           validationSchema={schema}
-          onSubmit={(values) => {
-            savePackage({
-              ...values,
-              id: values.id || uid('pkg'),
-              perks: values.perks.filter(Boolean)
-            });
-            setEditing(null);
+          onSubmit={async (values, helpers) => {
+            try {
+              const input: PackageInput = {
+                title: values.title,
+                description: values.description,
+                price: Number(values.price),
+                durationHours: Number(values.durationHours),
+                guests: Number(values.guests),
+                perks: values.perks.filter(Boolean),
+                isActive: values.isActive,
+                serviceIds: values.serviceIds,
+                menus: values.menus,
+                packageImage: values.packageImage
+              };
+              const saved = values.id ?
+              await updateAdminPackage(values.id, input) :
+              await createAdminPackage(input);
+              setPackages((prev) => {
+                const exists = prev.some((p) => p.id === saved.id);
+                return exists ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev];
+              });
+              toast.success(`${saved.title} ${values.id ? 'updated' : 'created'}.`);
+              setEditing(null);
+            } catch (err) {
+              toast.error(errorMessage(err, 'Could not save package.'));
+            } finally {
+              helpers.setSubmitting(false);
+            }
           }}>
-          
-            <Form>
-              <div className="max-h-[65vh] space-y-4 overflow-y-auto px-6 py-5">
-                <TextField name="name" label="Package name" placeholder="Date Night Signature" />
-                <TextAreaField
+
+            {({ isSubmitting }) =>
+          <Form>
+                <div className="max-h-[65vh] space-y-4 overflow-y-auto px-6 py-5">
+                  <TextField name="title" label="Package name" placeholder="Date Night Signature" />
+                  <TextAreaField
                 name="description"
                 label="Description"
                 placeholder="What does this bundle include?" />
-              
-                <FormGrid>
-                  <NumberField name="price" label="Package price" prefix="$" placeholder="620" />
-                  <NumberField name="durationHours" label="Duration (hours)" placeholder="4" />
-                </FormGrid>
-                <NumberField name="guests" label="Guests included" placeholder="2" />
-                <MultiSelectField
+
+                  <FormGrid>
+                    <NumberField name="price" label="Package price" prefix="₦" placeholder="62000" />
+                    <NumberField name="durationHours" label="Duration (hours)" placeholder="4" />
+                  </FormGrid>
+                  <NumberField name="guests" label="Guests included" placeholder="2" />
+                  <MultiSelectSearchField
                 name="serviceIds"
                 label="Services included"
+                placeholder="Select services…"
                 options={services.map((s) => ({ value: s.id, label: s.name }))} />
-              
-                <MultiSelectField
-                name="menuIds"
+
+                  <MultiSelectSearchField
+                name="menus"
                 label="Menus included"
-                options={menus.map((m) => ({ value: m.id, label: m.name }))} />
-              
-                <TagsField
+                placeholder="Select menus…"
+                options={menus.map((m) => ({ value: m.id, label: m.title }))} />
+
+                  <TagsField
                 name="perks"
                 label="Perks"
                 placeholder="Wine pairing notes, Table styling"
                 hint="Separate each perk with a comma." />
-              
-                <SwitchField
-                name="status"
+
+                  <ImageField
+                name="packageImage"
+                label="Package image"
+                previewUrl={packages.find((p) => p.id === editing.id)?.packageImage} />
+
+                  <SwitchField
+                name="isActive"
                 label="Package is live"
                 hint="Inactive packages cannot be selected on new bookings." />
-              
-              </div>
-              <ModalFooter>
-                <Button variant="secondary" type="button" onClick={() => setEditing(null)}>
-                  Cancel
-                </Button>
-                <Button type="submit">{editing.id ? 'Save changes' : 'Create package'}</Button>
-              </ModalFooter>
-            </Form>
+
+                </div>
+                <ModalFooter>
+                  <Button variant="secondary" type="button" disabled={isSubmitting} onClick={() => setEditing(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving…' : editing.id ? 'Save changes' : 'Create package'}
+                  </Button>
+                </ModalFooter>
+              </Form>
+          }
           </Formik> :
         null}
       </Modal>
@@ -234,10 +337,10 @@ export function Packages() {
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Delete package"
-        message={`Delete “${deleting?.name}”? Bookings already using it keep their agreed price.`}
-        onConfirm={() => deleting && removePackage(deleting.id)}
+        message={`Delete "${deleting?.title}"? Bookings already using it keep their agreed price.`}
+        onConfirm={() => deleting && handleDelete(deleting)}
         onClose={() => setDeleting(null)} />
-      
+
     </div>);
 
 }

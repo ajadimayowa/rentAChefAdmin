@@ -16,7 +16,10 @@ import {
   Tags,
   Users,
   UtensilsCrossed,
-  X } from
+  X, 
+  FolderDotIcon,
+  ChefHatIcon,
+  HardHat} from
 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -38,6 +41,7 @@ const navGroups: {title: string;items: NavItem[];}[] = [
   title: 'Catalogue',
   items: [
   { to: '/admin/services', label: 'Services', icon: <UtensilsCrossed className="h-4 w-4" /> },
+  { to: '/admin/special-services', label: 'Special Services', icon: <FolderDotIcon className="h-4 w-4" /> },
   { to: '/admin/categories', label: 'Service Categories', icon: <Tags className="h-4 w-4" /> },
   { to: '/admin/menus', label: 'Menus & Groceries', icon: <ClipboardList className="h-4 w-4" /> },
   { to: '/admin/packages', label: 'Packages', icon: <PackageIcon className="h-4 w-4" /> }]
@@ -48,14 +52,15 @@ const navGroups: {title: string;items: NavItem[];}[] = [
   items: [
   { to: '/admin/users', label: 'Users', icon: <Users className="h-4 w-4" /> },
   { to: '/admin/chefs', label: 'Chefs', icon: <ChefHat className="h-4 w-4" /> },
+  { to: '/admin/chef-levels', label: 'Chef Levels', icon: <HardHat className="h-4 w-4" /> },
   { to: '/admin/admins', label: 'Admins', icon: <ShieldCheck className="h-4 w-4" /> }]
 
 },
 {
   title: 'Commerce',
   items: [
-  { to: '/admin/charges', label: 'Charges & Pricing', icon: <Coins className="h-4 w-4" /> },
-  { to: '/admin/chef-pricing', label: 'Chef Tier Pricing', icon: <Layers className="h-4 w-4" /> },
+  // { to: '/admin/charges', label: 'Charges & Pricing', icon: <Coins className="h-4 w-4" /> },
+  { to: '/admin/chef-pricing', label: 'Chef Level Pricing', icon: <Layers className="h-4 w-4" /> },
   { to: '/admin/terms', label: 'Terms & Conditions', icon: <ScrollText className="h-4 w-4" /> }]
 
 }];

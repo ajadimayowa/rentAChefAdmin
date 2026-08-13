@@ -43,6 +43,24 @@ export interface BookingMenuSelection {
   uploadedMenuType?: string;
 }
 
+export interface BookingComment {
+  text: string;
+  authorId: string;
+  authorName?: string;
+  createdAt: string;
+}
+
+export interface BookingPaymentDetails {
+  mode: 'Cash' | 'Transfer';
+  transactionRef: string;
+  bankName?: string;
+  accountNumber?: string;
+  amount: number;
+  date: string;
+  recordedBy: string;
+  recordedAt: string;
+}
+
 // Shared detail shape rendered by the admin/chef/customer "view booking" pages —
 // each page presents this differently, but it's the same underlying booking.
 export interface BookingDetail {
@@ -62,6 +80,8 @@ export interface BookingDetail {
   menuSelection?: BookingMenuSelection;
   menuSelectionType?: string;
   timeline?: BookingTimelineEntry[];
+  comments?: BookingComment[];
+  paymentDetails?: BookingPaymentDetails;
   transactnRef?: string;
   quotationId?: string;
   date: string;

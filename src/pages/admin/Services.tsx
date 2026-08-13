@@ -11,7 +11,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+// import { ConfirmDialog } from '../../components/ui/ConfirmDialog'; // delete option disabled
 import { RowActions } from '../../components/ui/RowActions';
 import {
   CheckboxField,
@@ -24,7 +24,7 @@ import {
 '../../components/form/Fields';
 import {
   createService,
-  deleteService,
+  // deleteService, // delete option disabled — see handleDelete/ConfirmDialog below
   listServiceCategories,
   listServices,
   listWorkflows,
@@ -81,7 +81,8 @@ export function Services() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [editing, setEditing] = useState<(ServiceInput & {id?: string;}) | null>(null);
-  const [deleting, setDeleting] = useState<AdminService | null>(null);
+  // Delete option disabled — see RowActions/ConfirmDialog below.
+  // const [deleting, setDeleting] = useState<AdminService | null>(null);
 
   const categoryNamesById = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
@@ -117,15 +118,15 @@ export function Services() {
     });
   };
 
-  const handleDelete = async (service: AdminService) => {
-    try {
-      await deleteService(service.id);
-      setServices((prev) => prev.filter((s) => s.id !== service.id));
-      toast.success(`${service.name} deleted.`);
-    } catch (err) {
-      toast.error(errorMessage(err, 'Could not delete service.'));
-    }
-  };
+  // const handleDelete = async (service: AdminService) => {
+  //   try {
+  //     await deleteService(service.id);
+  //     setServices((prev) => prev.filter((s) => s.id !== service.id));
+  //     toast.success(`${service.name} deleted.`);
+  //   } catch (err) {
+  //     toast.error(errorMessage(err, 'Could not delete service.'));
+  //   }
+  // };
 
   const rows = useMemo(
     () =>
@@ -212,7 +213,8 @@ export function Services() {
     <RowActions
       onView={() => navigate(`/admin/services/${s.id}`)}
       onEdit={() => setEditing({ ...s })}
-      onDelete={() => setDeleting(s)} />
+      // onDelete={() => setDeleting(s)}
+    />
 
   }];
 
@@ -222,11 +224,12 @@ export function Services() {
       <PageHeader
         title="Services"
         description="Define what customers can book, which workflow drives it and who can deliver it."
-        action={
-        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyService)}>
-            New service
-          </Button>
-        } />
+        // action={
+        // <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyService)}>
+        //     New service
+        //   </Button>
+        // } 
+        />
 
 
       <Card>
@@ -298,11 +301,23 @@ export function Services() {
 
 
                   <FormGrid>
-                    <SelectField
+                    {/* Workflow can't be changed once a service exists — changing it would
+                        break bookings/pricing already tied to the original workflow. Only
+                        editable when creating a new service. */}
+                    {editing.id ?
+                <div>
+                        <label className="mb-1.5 block text-sm font-medium text-ink-800">Booking workflow</label>
+                        <p className="rounded-lg border border-ink-200 bg-ink-50 px-3 py-2 text-sm text-ink-600">
+                          {workflows.find((w) => w.code === editing.workflow)?.displayName || editing.workflow || '—'}
+                        </p>
+                      </div> :
+
+                <SelectField
                   name="workflow"
                   label="Booking workflow"
                   options={workflows.map((w) => ({ value: w.code, label: w.displayName }))} />
 
+                }
                     <SelectField
                   name="bookingType"
                   label="Booking type"
@@ -372,12 +387,12 @@ export function Services() {
         null}
       </Modal>
 
-      <ConfirmDialog
+      {/* <ConfirmDialog
         open={Boolean(deleting)}
         title="Delete service"
         message={`Delete "${deleting?.name}"? Menus and pricing rules linked to it will lose their reference.`}
         onConfirm={() => deleting && handleDelete(deleting)}
-        onClose={() => setDeleting(null)} />
+        onClose={() => setDeleting(null)} /> */}
 
     </div>);
 

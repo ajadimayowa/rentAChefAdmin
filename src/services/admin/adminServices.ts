@@ -1,10 +1,12 @@
 import { api, type ApiItemResponse, type ApiListResponse, type ApiMessageResponse } from '../../config/api';
 import type { ApprovalStatus, Chef, ChefLevelRef } from '../../types';
+import type { BookingComment, BookingPaymentDetails } from '../booking/bookingServices';
 
 export interface ChefListParams {
   search?: string;
   chefLevel?: string;
   status?: ApprovalStatus;
+  limit?: number;
 }
 
 export type ChefInput = Omit<Chef, 'id' | 'rating' | 'jobsCompleted' | 'joinedAt' | 'avatar'> & {
@@ -151,10 +153,12 @@ function mapChefDetail(raw: RawChefDetailResponse): ChefDetail {
 
 function toQueryString(params?: ChefListParams): string {
   const entries = Object.entries(params ?? {}).filter(
-    (entry): entry is [string, string] =>
+    (entry): entry is [string, string | number] =>
     entry[1] !== undefined && entry[1] !== '' && entry[1] !== 'all'
   );
-  return entries.length ? `?${new URLSearchParams(entries).toString()}` : '';
+  return entries.length ?
+  `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString()}` :
+  '';
 }
 
 function toChefFormData(input: ChefInput): FormData {
@@ -318,6 +322,52 @@ id: string,
 status: string)
 : Promise<ApiItemResponse<{id: string;status: string;}>> {
   return api.patch<ApiItemResponse<{id: string;status: string;}>>(`/admin/bookings/${id}/status`, { status });
+}
+
+export interface AssignedChef {
+  id: string;
+  fullName: string;
+}
+
+export function assignBookingChef(
+bookingId: string,
+chefId: string)
+: Promise<ApiItemResponse<{id: string;status: string;chef: AssignedChef;}>> {
+  return api.post<ApiItemResponse<{id: string;status: string;chef: AssignedChef;}>>(
+    `/admin/bookings/${bookingId}/assign-chef`,
+    { chefId }
+  );
+}
+
+export function addBookingComment(
+bookingId: string,
+text: string)
+: Promise<ApiItemResponse<BookingComment[]>> {
+  return api.post<ApiItemResponse<BookingComment[]>>(`/admin/bookings/${bookingId}/comments`, { text });
+}
+
+export interface AddBookingPaymentInput {
+  transactionRef: string;
+  mode: 'Cash' | 'Transfer';
+  bankName?: string;
+  accountNumber?: string;
+  amount: number;
+  date: string;
+}
+
+export interface AddBookingPaymentResult {
+  id: string;
+  paymentStatus: string;
+  modeOfPayment: string;
+  transactnRef: string;
+  paymentDetails: BookingPaymentDetails;
+}
+
+export function addBookingPayment(
+bookingId: string,
+input: AddBookingPaymentInput)
+: Promise<ApiItemResponse<AddBookingPaymentResult>> {
+  return api.post<ApiItemResponse<AddBookingPaymentResult>>(`/admin/bookings/${bookingId}/payment`, input);
 }
 
 /**

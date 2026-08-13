@@ -20,7 +20,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { TextAreaField } from '../../components/form/Fields';
+import { TextAreaField, TextField } from '../../components/form/Fields';
 import {
   getService,
   listServiceCategories,
@@ -40,7 +40,8 @@ const errorMessage = (err: unknown, fallback: string): string =>
 err instanceof ApiError ? err.message : fallback;
 
 const termSchema = Yup.object({
-  description: Yup.string().required('Add the clause text').max(1000, 'Keep it under 1000 characters')
+  description: Yup.string().required('Add the clause text').max(1000, 'Keep it under 1000 characters'),
+  termsUrl: Yup.string().url('Enter a valid URL').max(500, 'Keep it under 500 characters')
 });
 
 export function ViewServicePage() {
@@ -198,7 +199,19 @@ export function ViewServicePage() {
             <ul className="divide-y divide-ink-100">
                 {terms.map((term) =>
               <li key={term.id} className="flex items-start justify-between gap-3 px-5 py-3.5">
-                    <p className="text-sm leading-relaxed text-ink-700">{term.description}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm leading-relaxed text-ink-700">{term.description}</p>
+                      {term.termsUrl ?
+                  <a
+                    href={term.termsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-block truncate text-xs font-medium text-buttons hover:underline">
+
+                          {term.termsUrl}
+                        </a> :
+                  null}
+                    </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <button
                     type="button"
@@ -243,16 +256,19 @@ export function ViewServicePage() {
 
         {editingTerm ?
         <Formik
-          initialValues={{ description: editingTerm === 'new' ? '' : editingTerm.description }}
+          initialValues={{
+            description: editingTerm === 'new' ? '' : editingTerm.description,
+            termsUrl: editingTerm === 'new' ? '' : editingTerm.termsUrl ?? ''
+          }}
           validationSchema={termSchema}
           onSubmit={async (values, { setSubmitting }) => {
             try {
               if (editingTerm === 'new') {
-                const res = await createServiceTerm(id, values.description);
+                const res = await createServiceTerm(id, values.description, values.termsUrl);
                 setTerms((prev) => [res.payload, ...prev]);
                 toast.success('Clause added.');
               } else {
-                const res = await updateServiceTerm(editingTerm.id, values.description);
+                const res = await updateServiceTerm(editingTerm.id, values.description, values.termsUrl);
                 setTerms((prev) => prev.map((t) => t.id === res.payload.id ? res.payload : t));
                 toast.success('Clause updated.');
               }
@@ -266,12 +282,18 @@ export function ViewServicePage() {
 
             {({ isSubmitting }) =>
           <Form>
-                <div className="px-6 py-5">
+                <div className="space-y-4 px-6 py-5">
                   <TextAreaField
                 name="description"
                 label="Clause text"
                 rows={5}
                 placeholder="Describe the condition in plain language." />
+
+                  <TextField
+                name="termsUrl"
+                type="url"
+                label="Read more URL (optional)"
+                placeholder="https://example.com/full-terms" />
 
                 </div>
                 <ModalFooter>

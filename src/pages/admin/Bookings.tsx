@@ -14,6 +14,7 @@ import {
   type AdminBookingListItem } from
 '../../services/admin/adminServices';
 import { BOOKING_STATUS_OPTIONS } from '../../utils/bookingStatus';
+import { workflowRouteSlug } from '../../utils/bookingWorkflow';
 import { convertToThousand, formatDate } from '../../utils/format';
 import { ApiError } from '../../config/api';
 
@@ -170,7 +171,7 @@ export function Bookings() {
           columns={columns}
           rows={rows}
           rowKey={(b) => b.id}
-          onRowClick={(b) => navigate(`/admin/bookings/${b.id}`)}
+          onRowClick={(b) => navigate(`/admin/bookings/${workflowRouteSlug(b.workflow)}/${b.id}`)}
           emptyTitle={loading ? 'Loading bookings…' : 'No bookings found'}
           emptyDescription={loading ? 'Fetching the booking list.' : 'Adjust your filters to find what you\'re looking for.'} />
 

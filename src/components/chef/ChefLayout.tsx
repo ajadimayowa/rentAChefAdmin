@@ -5,6 +5,7 @@ import {
   LogOut,
   Menu as MenuIcon,
   User,
+  UtensilsCrossed,
   X } from
 'lucide-react';
 import React, { useState } from 'react';
@@ -20,6 +21,7 @@ interface NavItem {
 const navItems: NavItem[] = [
 { to: '/chef', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
 { to: '/chef/bookings', label: 'My Bookings', icon: <CalendarCheck className="h-4 w-4" /> },
+{ to: '/chef/menus', label: 'My Menus', icon: <UtensilsCrossed className="h-4 w-4" /> },
 { to: '/chef/profile', label: 'My Profile', icon: <User className="h-4 w-4" /> }];
 
 

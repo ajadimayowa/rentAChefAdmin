@@ -1,151 +1,280 @@
-import React, { useMemo, useState } from 'react';
-import { Form, Formik } from 'formik';
+import React, { useEffect, useState } from 'react';
+import { FieldArray, Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { Toolbar, FilterSelect } from '../../components/ui/Toolbar';
 import { DataTable, type Column } from '../../components/ui/DataTable';
-import { Badge, statusTone } from '../../components/ui/Badge';
+import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { RowActions } from '../../components/ui/RowActions';
 import {
+  CheckboxField,
+  FieldSectionTitle,
   FormGrid,
   NumberField,
   SelectField,
-  SwitchField } from
+  TextAreaField,
+  TextField } from
 '../../components/form/Fields';
-import { useAdminData } from '../../contexts/AdminDataContext';
-import { formatCurrency, titleCase, uid } from '../../utils/format';
-import type { ChefCategoryPrice, ChefTier } from '../../types';
+import {
+  createAdminServicePricing,
+  deleteAdminServicePricing,
+  listAdminServicePricing,
+  listChefCategories,
+  listSpecialServices,
+  updateAdminServicePricing,
+  type AdminServicePricing,
+  type ChefCategoryOption,
+  type PricingType,
+  type SpecialServiceOption } from
+'../../services/admin/servicePricingServices';
+import { listServices, type AdminService } from '../../services/admin/adminServices';
+import { convertToThousand, formatDate } from '../../utils/format';
+import { ApiError } from '../../config/api';
 
-const tiers: ChefTier[] = ['Standard', 'Premium', 'Executive', 'Signature'];
+const errorMessage = (err: unknown, fallback: string): string =>
+err instanceof ApiError ? err.message : fallback;
 
-const schema = Yup.object({
-  tier: Yup.string().required('Select a chef tier'),
-  serviceId: Yup.string().required('Select a service'),
-  hourlyRate: Yup.number().typeError('Enter a number').required('Hourly rate is required').min(1),
-  minimumHours: Yup.number().typeError('Enter a number').required('Minimum hours is required').min(1),
-  weekendSurchargePct: Yup.number().typeError('Enter a number').min(0).max(100, 'Max 100%'),
-  travelFee: Yup.number().typeError('Enter a number').min(0)
-});
+interface OptionRow {
+  name: string;
+  price: number | '';
+  description: string;
+}
 
-const emptyRule: ChefCategoryPrice = {
-  id: '',
-  tier: 'Standard',
+interface PricingFormValues {
+  id?: string;
+  targetType: 'service' | 'specialService';
+  serviceId: string;
+  specialServiceId: string;
+  chefCategoryId: string;
+  pricingType: PricingType;
+  numberOfDays: number | '';
+  monthlySubFee: number | '';
+  description: string;
+  basePrice: number | '';
+  servicePricingOptions: OptionRow[];
+  effectiveFrom: string;
+  effectiveTo: string;
+  isActive: boolean;
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const emptyForm: PricingFormValues = {
+  targetType: 'service',
   serviceId: '',
-  hourlyRate: 0,
-  minimumHours: 3,
-  weekendSurchargePct: 0,
-  travelFee: 0,
-  status: 'active'
+  specialServiceId: '',
+  chefCategoryId: '',
+  pricingType: 'levelbased',
+  numberOfDays: '',
+  monthlySubFee: '',
+  description: '',
+  basePrice: '',
+  servicePricingOptions: [],
+  effectiveFrom: todayIso(),
+  effectiveTo: '',
+  isActive: true
 };
 
-export function ChefTierPricing() {
-  const { chefPrices, services, chefs, saveChefPrice, removeChefPrice, lookup } = useAdminData();
-  const [search, setSearch] = useState('');
-  const [tier, setTier] = useState('all');
-  const [editing, setEditing] = useState<ChefCategoryPrice | null>(null);
-  const [deleting, setDeleting] = useState<ChefCategoryPrice | null>(null);
+const toFormValues = (p: AdminServicePricing): PricingFormValues => ({
+  id: p.id,
+  targetType: p.target.type,
+  serviceId: p.target.type === 'service' ? p.target.id : '',
+  specialServiceId: p.target.type === 'specialService' ? p.target.id : '',
+  chefCategoryId: p.chefCategory.id,
+  pricingType: p.pricingType,
+  numberOfDays: p.numberOfDays ?? '',
+  monthlySubFee: p.monthlySubFee ?? '',
+  description: p.description ?? '',
+  basePrice: p.basePrice,
+  servicePricingOptions: p.servicePricingOptions.map((o) => ({
+    name: o.name,
+    price: o.price,
+    description: o.description ?? ''
+  })),
+  effectiveFrom: p.effectiveFrom.slice(0, 10),
+  effectiveTo: p.effectiveTo ? p.effectiveTo.slice(0, 10) : '',
+  isActive: p.isActive
+});
 
-  const rows = useMemo(
-    () =>
-    chefPrices.filter(
-      (p) =>
-      (tier === 'all' || p.tier === tier) && (
-      p.tier.toLowerCase().includes(search.toLowerCase()) ||
-      lookup.serviceName(p.serviceId).toLowerCase().includes(search.toLowerCase()))
-    ),
-    [chefPrices, search, tier, lookup]
+const schema = Yup.object({
+  targetType: Yup.string().oneOf(['service', 'specialService']).required(),
+  serviceId: Yup.string().when('targetType', {
+    is: 'service',
+    then: (s) => s.required('Select a service'),
+    otherwise: (s) => s.notRequired()
+  }),
+  specialServiceId: Yup.string().when('targetType', {
+    is: 'specialService',
+    then: (s) => s.required('Select a special service'),
+    otherwise: (s) => s.notRequired()
+  }),
+  chefCategoryId: Yup.string().required('Select a chef category'),
+  pricingType: Yup.string().oneOf(['daybased', 'levelbased']).required(),
+  numberOfDays: Yup.number().when('pricingType', {
+    is: 'daybased',
+    then: (s) => s.typeError('Enter a number').required('Number of days is required').min(1),
+    otherwise: (s) => s.notRequired()
+  }),
+  monthlySubFee: Yup.number().when('pricingType', {
+    is: 'daybased',
+    then: (s) => s.typeError('Enter a number').required('Monthly sub fee is required').min(0),
+    otherwise: (s) => s.notRequired()
+  }),
+  basePrice: Yup.number().typeError('Enter a number').required('Base price is required').min(0),
+  effectiveFrom: Yup.string().required('Effective-from date is required'),
+  servicePricingOptions: Yup.array().of(
+    Yup.object({
+      name: Yup.string().required('Option name is required'),
+      price: Yup.number().typeError('Enter a number').required('Option price is required').min(0)
+    })
+  )
+});
+
+export function ChefTierPricing() {
+  const [pricing, setPricing] = useState<AdminServicePricing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [services, setServices] = useState<AdminService[]>([]);
+  const [specialServices, setSpecialServices] = useState<SpecialServiceOption[]>([]);
+  const [chefCategories, setChefCategories] = useState<ChefCategoryOption[]>([]);
+
+  const [search, setSearch] = useState('');
+  const [chefCategoryFilter, setChefCategoryFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('all');
+  const [editing, setEditing] = useState<PricingFormValues | null>(null);
+  const [deleting, setDeleting] = useState<AdminServicePricing | null>(null);
+
+  const loadPricing = () => {
+    setLoading(true);
+    listAdminServicePricing().
+    then(setPricing).
+    catch((err) => toast.error(errorMessage(err, 'Could not load pricing rules.'))).
+    finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadPricing();
+    listServices().then((res) => setServices(res.payload)).catch(() => toast.error('Could not load services.'));
+    listSpecialServices().then(setSpecialServices).catch(() => toast.error('Could not load special services.'));
+    listChefCategories().then(setChefCategories).catch(() => toast.error('Could not load chef categories.'));
+  }, []);
+
+  const handleDelete = async (p: AdminServicePricing) => {
+    try {
+      await deleteAdminServicePricing(p.id);
+      setPricing((prev) => prev.filter((row) => row.id !== p.id));
+      toast.success('Pricing rule deleted.');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Could not delete pricing rule.'));
+    }
+  };
+
+  const rows = pricing.filter(
+    (p) =>
+    (chefCategoryFilter === 'all' || p.chefCategory.id === chefCategoryFilter) && (
+    serviceFilter === 'all' || p.target.type === 'service' && p.target.id === serviceFilter) && (
+    p.chefCategory.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.target.name.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const columns: Column<ChefCategoryPrice>[] = [
+  const columns: Column<AdminServicePricing>[] = [
   {
-    key: 'tier',
-    header: 'Chef tier',
+    key: 'chefCategory',
+    header: 'Chef category',
+    render: (p) => <Badge tone="brand">{p.chefCategory.name}</Badge>
+  },
+  {
+    key: 'target',
+    header: 'Target',
     render: (p) =>
     <div>
-          <Badge tone="brand">{p.tier}</Badge>
-          <p className="mt-1 text-xs text-ink-500">
-            {chefs.filter((c) => c.chefLevel?.name === p.tier).length} chefs
-          </p>
+          <p className="font-medium text-ink-900">{p.target.name}</p>
+          <Badge tone="neutral">{p.target.type === 'service' ? 'Service' : 'Special service'}</Badge>
         </div>
 
   },
-  { key: 'service', header: 'Service', render: (p) => lookup.serviceName(p.serviceId) },
   {
-    key: 'rate',
-    header: 'Hourly rate',
-    align: 'right',
-    render: (p) => <span className="font-medium">{formatCurrency(p.hourlyRate)}/hr</span>
-  },
-  { key: 'min', header: 'Min hours', align: 'center', render: (p) => p.minimumHours },
-  {
-    key: 'weekend',
-    header: 'Weekend',
-    align: 'right',
-    render: (p) => `+${p.weekendSurchargePct}%`
+    key: 'pricingType',
+    header: 'Pricing type',
+    render: (p) => <Badge tone={p.pricingType === 'daybased' ? 'info' : 'neutral'}>{p.pricingType === 'daybased' ? 'Day-based' : 'Level-based'}</Badge>
   },
   {
-    key: 'travel',
-    header: 'Travel fee',
+    key: 'basePrice',
+    header: 'Base price',
     align: 'right',
-    render: (p) => formatCurrency(p.travelFee)
+    render: (p) => <span className="font-medium">{convertToThousand(p.basePrice)}</span>
   },
   {
-    key: 'minCharge',
-    header: 'Min charge',
-    align: 'right',
+    key: 'dayBased',
+    header: 'Day-based terms',
     render: (p) =>
-    <span className="font-medium text-ink-950">
-          {formatCurrency(p.hourlyRate * p.minimumHours + p.travelFee)}
-        </span>
+    p.pricingType === 'daybased' ?
+    <p className="text-xs text-ink-500">
+          {p.numberOfDays} day{p.numberOfDays === 1 ? '' : 's'} · {convertToThousand(p.monthlySubFee ?? 0)}/mo
+        </p> :
+
+    <span className="text-xs text-ink-400">—</span>
+
+  },
+  {
+    key: 'options',
+    header: 'Options',
+    align: 'center',
+    render: (p) => p.servicePricingOptions.length
+  },
+  {
+    key: 'effective',
+    header: 'Effective',
+    render: (p) =>
+    <p className="text-xs text-ink-500">
+          {formatDate(p.effectiveFrom)}{p.effectiveTo ? ` – ${formatDate(p.effectiveTo)}` : ' – ongoing'}
+        </p>
 
   },
   {
     key: 'status',
     header: 'Status',
-    render: (p) => <Badge tone={statusTone(p.status)}>{titleCase(p.status)}</Badge>
+    render: (p) => <Badge tone={p.isActive ? 'success' : 'neutral'}>{p.isActive ? 'Active' : 'Inactive'}</Badge>
   },
   {
     key: 'actions',
     header: '',
     align: 'right',
     width: '110px',
-    render: (p) => <RowActions onEdit={() => setEditing(p)} onDelete={() => setDeleting(p)} />
+    render: (p) =>
+    <RowActions
+      onEdit={() => setEditing(toFormValues(p))}
+      onDelete={() => setDeleting(p)} />
+
   }];
 
 
   return (
     <div>
       <PageHeader
-        title="Chef Tier Pricing"
-        description="Set what each chef tier charges per service, including minimums and surcharges."
+        title="Chef Category Pricing"
+        description="Set what each chef category charges per service, including day-based terms and add-on options."
         action={
-        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyRule)}>
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyForm)}>
             New pricing rule
           </Button>
         } />
-      
+
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tiers.map((t) => {
-          const rules = chefPrices.filter((p) => p.tier === t && p.status === 'active');
-          const avg = rules.length ?
-          rules.reduce((s, r) => s + r.hourlyRate, 0) / rules.length :
-          0;
+        {chefCategories.map((c) => {
+          const rules = pricing.filter((p) => p.chefCategory.id === c.id && p.isActive);
+          const avg = rules.length ? rules.reduce((s, r) => s + r.basePrice, 0) / rules.length : 0;
           return (
-            <Card key={t} className="p-5">
-              <div className="flex items-center justify-between">
-                <Badge tone="brand">{t}</Badge>
-                <span className="text-xs text-ink-400">
-                  {chefs.filter((c) => c.chefLevel?.name === t).length} chefs
-                </span>
-              </div>
+            <Card key={c.id} className="p-5">
+              <Badge tone="brand">{c.name}</Badge>
               <p className="mt-3 font-heading text-2xl font-semibold text-ink-950">
-                {avg ? `${formatCurrency(avg)}/hr` : '—'}
+                {avg ? convertToThousand(avg) : '—'}
               </p>
               <p className="mt-1 text-xs text-ink-400">
                 Average across {rules.length} active rule{rules.length === 1 ? '' : 's'}
@@ -158,26 +287,35 @@ export function ChefTierPricing() {
       <Card>
         <CardHeader
           title="Pricing matrix"
-          description="Each rule maps a chef tier to a service and its rate card" />
-        
-        <Toolbar search={search} onSearch={setSearch} placeholder="Search by tier or service…">
+          description="Each rule maps a chef category to a service (or special service) and its rate card" />
+
+        <Toolbar search={search} onSearch={setSearch} placeholder="Search by category or target…">
           <FilterSelect
-            label="Tier filter"
-            value={tier}
-            onChange={setTier}
+            label="Chef category filter"
+            value={chefCategoryFilter}
+            onChange={setChefCategoryFilter}
             options={[
-            { value: 'all', label: 'All tiers' },
-            ...tiers.map((t) => ({ value: t, label: t }))]
+            { value: 'all', label: 'All chef categories' },
+            ...chefCategories.map((c) => ({ value: c.id, label: c.name }))]
             } />
-          
+
+          <FilterSelect
+            label="Service filter"
+            value={serviceFilter}
+            onChange={setServiceFilter}
+            options={[
+            { value: 'all', label: 'All services' },
+            ...services.map((s) => ({ value: s.id, label: s.name }))]
+            } />
+
         </Toolbar>
         <DataTable
           columns={columns}
           rows={rows}
           rowKey={(p) => p.id}
-          emptyTitle="No pricing rules"
-          emptyDescription="Add a rule so chefs in this tier can be booked for a service." />
-        
+          emptyTitle={loading ? 'Loading pricing rules…' : 'No pricing rules'}
+          emptyDescription={loading ? 'Fetching the pricing matrix.' : 'Add a rule so chefs in this category can be booked for a service.'} />
+
       </Card>
 
       <Modal
@@ -185,56 +323,177 @@ export function ChefTierPricing() {
         onClose={() => setEditing(null)}
         title={editing?.id ? 'Edit pricing rule' : 'New pricing rule'}
         description="Rates feed directly into booking quotes and chef payouts."
-        size="md">
-        
+        size="lg">
+
         {editing ?
         <Formik
           initialValues={editing}
           validationSchema={schema}
-          onSubmit={(values) => {
-            saveChefPrice({ ...values, id: values.id || uid('ccp') });
-            setEditing(null);
+          onSubmit={async (values, helpers) => {
+            try {
+              const input = {
+                targetType: values.targetType,
+                serviceId: values.serviceId || undefined,
+                specialServiceId: values.specialServiceId || undefined,
+                chefCategoryId: values.chefCategoryId,
+                pricingType: values.pricingType,
+                numberOfDays: values.numberOfDays === '' ? undefined : Number(values.numberOfDays),
+                monthlySubFee: values.monthlySubFee === '' ? undefined : Number(values.monthlySubFee),
+                description: values.description,
+                basePrice: Number(values.basePrice),
+                servicePricingOptions: values.servicePricingOptions.
+                filter((o) => o.name.trim() && o.price !== '').
+                map((o) => ({
+                  name: o.name.trim(),
+                  price: Number(o.price),
+                  description: o.description.trim() || undefined
+                })),
+                effectiveFrom: values.effectiveFrom,
+                effectiveTo: values.effectiveTo || undefined,
+                isActive: values.isActive
+              };
+              const saved = values.id ?
+              await updateAdminServicePricing(values.id, input) :
+              await createAdminServicePricing(input);
+              setPricing((prev) => {
+                const exists = prev.some((p) => p.id === saved.id);
+                return exists ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev];
+              });
+              toast.success(`Pricing rule ${values.id ? 'updated' : 'created'}.`);
+              setEditing(null);
+            } catch (err) {
+              toast.error(errorMessage(err, 'Could not save pricing rule.'));
+            } finally {
+              helpers.setSubmitting(false);
+            }
           }}>
-          
-            <Form>
-              <div className="space-y-4 px-6 py-5">
-                <FormGrid>
-                  <SelectField
-                  name="tier"
-                  label="Chef tier"
-                  options={tiers.map((t) => ({ value: t, label: t }))} />
-                
-                  <SelectField
-                  name="serviceId"
-                  label="Service"
-                  options={services.map((s) => ({ value: s.id, label: s.name }))} />
-                
-                </FormGrid>
-                <FormGrid>
-                  <NumberField name="hourlyRate" label="Hourly rate" prefix="$" placeholder="70" />
-                  <NumberField name="minimumHours" label="Minimum hours" placeholder="3" />
-                </FormGrid>
-                <FormGrid>
-                  <NumberField
-                  name="weekendSurchargePct"
-                  label="Weekend surcharge (%)"
-                  placeholder="10" />
-                
-                  <NumberField name="travelFee" label="Travel fee" prefix="$" placeholder="25" />
-                </FormGrid>
-                <SwitchField
-                name="status"
-                label="Rule is active"
-                hint="Inactive rules block this tier from being quoted for the service." />
-              
-              </div>
-              <ModalFooter>
-                <Button variant="secondary" type="button" onClick={() => setEditing(null)}>
-                  Cancel
-                </Button>
-                <Button type="submit">{editing.id ? 'Save changes' : 'Create rule'}</Button>
-              </ModalFooter>
-            </Form>
+
+            {({ values, isSubmitting }) =>
+          <Form>
+                <div className="max-h-[65vh] space-y-4 overflow-y-auto px-6 py-5">
+                  <FormGrid>
+                    <SelectField
+                  name="targetType"
+                  label="Target type"
+                  options={[
+                  { value: 'service', label: 'Service' },
+                  { value: 'specialService', label: 'Special service' }]
+                  } />
+
+                    <SelectField
+                  name="chefCategoryId"
+                  label="Chef category"
+                  options={chefCategories.map((c) => ({ value: c.id, label: c.name }))} />
+
+                  </FormGrid>
+
+                  {values.targetType === 'service' ?
+              <SelectField
+                name="serviceId"
+                label="Service"
+                options={services.map((s) => ({ value: s.id, label: s.name }))} /> :
+
+              <SelectField
+                name="specialServiceId"
+                label="Special service"
+                options={specialServices.map((s) => ({ value: s.id, label: s.title }))} />
+              }
+
+                  <FormGrid>
+                    <SelectField
+                  name="pricingType"
+                  label="Pricing type"
+                  options={[
+                  { value: 'levelbased', label: 'Level-based' },
+                  { value: 'daybased', label: 'Day-based' }]
+                  } />
+
+                    <NumberField name="basePrice" label="Base price" prefix="₦" placeholder="150000" />
+                  </FormGrid>
+
+                  {values.pricingType === 'daybased' &&
+              <FormGrid>
+                      <NumberField name="numberOfDays" label="Number of days" placeholder="2" />
+                      <NumberField name="monthlySubFee" label="Monthly sub fee" prefix="₦" placeholder="25000" />
+                    </FormGrid>
+              }
+
+                  <TextAreaField name="description" label="Description" placeholder="Optional internal note about this rule." />
+
+                  <FormGrid>
+                    <TextField name="effectiveFrom" type="date" label="Effective from" />
+                    <TextField name="effectiveTo" type="date" label="Effective to" hint="Leave blank for ongoing." />
+                  </FormGrid>
+
+                  <CheckboxField name="isActive" label="Rule is active" hint="Inactive rules block this category from being quoted for the target." />
+
+                  <div className="border-t border-ink-200 pt-5">
+                    <FieldSectionTitle>Pricing options</FieldSectionTitle>
+                    <FieldArray name="servicePricingOptions">
+                      {({ push, remove }) =>
+                  <div className="mt-3 space-y-3">
+                          {values.servicePricingOptions.length === 0 &&
+                    <p className="rounded-lg border border-dashed border-ink-300 px-4 py-6 text-center text-sm text-ink-500">
+                              No add-on options yet.
+                            </p>
+                    }
+                          {values.servicePricingOptions.map((_, i) =>
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 rounded-xl border border-ink-200 bg-ink-50/50 p-4">
+
+                              <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
+                                <TextField
+                          name={`servicePricingOptions.${i}.name`}
+                          label="Option name"
+                          placeholder="Weekend surcharge" />
+
+                                <NumberField
+                          name={`servicePricingOptions.${i}.price`}
+                          label="Price"
+                          prefix="₦"
+                          placeholder="10000" />
+
+                                <TextField
+                          name={`servicePricingOptions.${i}.description`}
+                          label="Description"
+                          placeholder="Optional detail" />
+
+                              </div>
+                              <button
+                        type="button"
+                        onClick={() => remove(i)}
+                        aria-label={`Remove option ${i + 1}`}
+                        className="mt-7 rounded-lg p-2 text-ink-500 hover:bg-red-50 hover:text-red-600">
+
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                    )}
+                          <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      icon={<Plus className="h-4 w-4" />}
+                      onClick={() => push({ name: '', price: '', description: '' })}>
+
+                            Add option
+                          </Button>
+                        </div>
+                  }
+                    </FieldArray>
+                  </div>
+                </div>
+                <ModalFooter>
+                  <Button variant="secondary" type="button" disabled={isSubmitting} onClick={() => setEditing(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving…' : editing.id ? 'Save changes' : 'Create rule'}
+                  </Button>
+                </ModalFooter>
+              </Form>
+          }
           </Formik> :
         null}
       </Modal>
@@ -242,12 +501,10 @@ export function ChefTierPricing() {
       <ConfirmDialog
         open={Boolean(deleting)}
         title="Delete pricing rule"
-        message={`Remove the ${deleting?.tier} rate for ${
-        deleting ? lookup.serviceName(deleting.serviceId) : ''}?`
-        }
-        onConfirm={() => deleting && removeChefPrice(deleting.id)}
+        message={`Remove the ${deleting?.chefCategory.name} rate for ${deleting?.target.name}?`}
+        onConfirm={() => deleting && handleDelete(deleting)}
         onClose={() => setDeleting(null)} />
-      
+
     </div>);
 
 }
