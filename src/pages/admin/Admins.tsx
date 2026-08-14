@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Plus, ShieldBan, ShieldCheck } from 'lucide-react';
+import { KeyRound, Plus, ShieldBan, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { Toolbar, FilterSelect } from '../../components/ui/Toolbar';
@@ -23,6 +24,8 @@ import {
   type AdminCreateInput,
   type AdminUpdateInput
 } from '../../services/admin/adminUserServices';
+import { changePasswordWithOtp, requestPasswordChangeOtp, resendPasswordChangeOtp } from '../../services/auth';
+import { useAuthStore } from '../../store/authStore';
 
 const roles: AdminRole[] = ['admin', 'super_admin'];
 const roleLabels: Record<AdminRole, string> = {
@@ -62,13 +65,43 @@ const schema = Yup.object({
   })
 });
 
+interface PasswordResetValues {
+  otp: string;
+  newPassword: string;
+  confirmNewPassword: string;
+}
+
+const passwordResetInitialValues: PasswordResetValues = { otp: '', newPassword: '', confirmNewPassword: '' };
+
+const passwordResetSchema = Yup.object({
+  otp: Yup.string().required('Enter the code we sent you').min(4, 'Enter the full code'),
+  newPassword: Yup.string().min(8, 'At least 8 characters').required('New password is required'),
+  confirmNewPassword: Yup.string().
+    oneOf([Yup.ref('newPassword')], 'Passwords must match').
+    required('Confirm your new password')
+});
+
 export function Admins() {
+  const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('all');
   const [editing, setEditing] = useState<AdminFormValues | null>(null);
   const [deleting, setDeleting] = useState<Admin | null>(null);
+
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendingOtp, setResendingOtp] = useState(false);
+
+  const closePasswordModal = () => {
+    setPasswordModalOpen(false);
+    setOtpSent(false);
+  };
 
   useEffect(() => {
     listAdmins().
@@ -163,9 +196,17 @@ export function Admins() {
         title="Admins"
         description="Create and manage Admin and Super Admin accounts for the RentAChef dashboard."
         action={
-          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyAdmin)}>
-            Add admin
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              icon={<KeyRound className="h-4 w-4" />}
+              onClick={() => setPasswordModalOpen(true)}>
+              Update my password
+            </Button>
+            <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyAdmin)}>
+              Add admin
+            </Button>
+          </>
         } />
 
       <Card>
@@ -280,6 +321,115 @@ export function Admins() {
         confirmLabel="Remove"
         onConfirm={() => deleting && handleDelete(deleting)}
         onClose={() => setDeleting(null)} />
+
+      <Modal
+        open={passwordModalOpen}
+        onClose={closePasswordModal}
+        title={otpSent ? 'Enter your code' : 'Update my password'}
+        description={
+          otpSent ?
+            `We sent a verification code to ${currentUser?.email}.` :
+            'We\'ll email a one-time code to confirm it\'s you before updating your password.'
+        }
+        size="md">
+
+        {!otpSent ?
+          <>
+            <div className="px-6 py-5 text-sm text-ink-600">
+              A verification code will be sent to{' '}
+              <span className="font-medium text-ink-900">{currentUser?.email}</span>.
+            </div>
+            <ModalFooter>
+              <Button variant="secondary" type="button" disabled={sendingOtp} onClick={closePasswordModal}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={sendingOtp || !currentUser?.email}
+                onClick={async () => {
+                  if (!currentUser?.email) return;
+                  setSendingOtp(true);
+                  try {
+                    await requestPasswordChangeOtp(currentUser.email);
+                    setOtpSent(true);
+                    toast.success('Verification code sent to your email.');
+                  } catch (err) {
+                    toast.error(errorMessage(err, 'Could not send verification code.'));
+                  } finally {
+                    setSendingOtp(false);
+                  }
+                }}>
+                {sendingOtp ? 'Sending…' : 'Send code'}
+              </Button>
+            </ModalFooter>
+          </> :
+
+          <Formik
+            key="password-otp"
+            initialValues={passwordResetInitialValues}
+            validationSchema={passwordResetSchema}
+            onSubmit={async (values, { setSubmitting }) => {
+              if (!currentUser?.email) return;
+              try {
+                await changePasswordWithOtp(currentUser.email, values.otp, values.newPassword);
+                toast.success('Password updated. Please sign in again.');
+                closePasswordModal();
+                logout();
+                navigate('/login', { replace: true });
+              } catch (err) {
+                toast.error(errorMessage(err, 'Could not update password.'));
+              } finally {
+                setSubmitting(false);
+              }
+            }}>
+
+            {({ isSubmitting }) =>
+              <Form>
+                <div className="space-y-4 px-6 py-5">
+                  <TextField name="otp" label="Verification code" placeholder="123456" />
+                  <TextField name="newPassword" label="New password" type="password" placeholder="New password" />
+                  <TextField
+                    name="confirmNewPassword"
+                    label="Confirm new password"
+                    type="password"
+                    placeholder="Confirm new password" />
+
+                  <button
+                    type="button"
+                    disabled={resendingOtp}
+                    onClick={async () => {
+                      if (!currentUser?.email) return;
+                      setResendingOtp(true);
+                      try {
+                        await resendPasswordChangeOtp(currentUser.email);
+                        toast.success('Code resent.');
+                      } catch (err) {
+                        toast.error(errorMessage(err, 'Could not resend code.'));
+                      } finally {
+                        setResendingOtp(false);
+                      }
+                    }}
+                    className="text-xs font-medium text-buttons transition-colors hover:text-ink-900 disabled:opacity-50">
+                    {resendingOtp ? 'Resending…' : 'Resend code'}
+                  </button>
+                </div>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={closePasswordModal}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving…' : 'Save'}
+                  </Button>
+                </ModalFooter>
+              </Form>
+            }
+          </Formik>
+        }
+      </Modal>
 
     </div>);
 }
