@@ -58,7 +58,7 @@ const schema = Yup.object({
     required('Experience is required').
     min(0, 'Cannot be negative').
     max(60, 'That seems too high'),
-  bio: Yup.string().required('Add a short bio').max(240, 'Keep it under 240 characters'),
+  bio: Yup.string().required('Add a short bio'),
   specialties: Yup.array().of(Yup.string()).min(1, 'Add at least one specialty'),
   servicesOffered: Yup.array().of(Yup.string()).min(1, 'Select at least one service'),
   avatarFile: Yup.mixed<File>().test(
@@ -402,6 +402,7 @@ export function Chefs() {
       <Modal
         open={Boolean(editing)}
         onClose={() => setEditing(null)}
+        closeOnOverlayClick={false}
         title={editing?.id ? 'Edit chef' : 'Add chef'}
         description="Chef level determines the rate card applied to this chef's bookings.">
 

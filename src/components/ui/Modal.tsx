@@ -9,6 +9,7 @@ interface ModalProps {
   title: string;
   description?: string;
   size?: 'md' | 'lg' | 'xl';
+  closeOnOverlayClick?: boolean;
   children: React.ReactNode;
 }
 
@@ -18,7 +19,7 @@ const sizes = {
   xl: 'max-w-4xl'
 };
 
-export function Modal({ open, onClose, title, description, size = 'lg', children }: ModalProps) {
+export function Modal({ open, onClose, title, description, size = 'lg', closeOnOverlayClick = true, children }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -42,7 +43,7 @@ export function Modal({ open, onClose, title, description, size = 'lg', children
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 bg-ink-950/50 backdrop-blur-[2px]"
-          onClick={onClose}
+          onClick={closeOnOverlayClick ? onClose : undefined}
           aria-hidden="true" />
         
           <motion.div
