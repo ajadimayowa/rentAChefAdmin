@@ -114,8 +114,11 @@ export function SignUp() {
           <div className="rounded-2xl border border-ink-200/80 bg-white p-6 shadow-card sm:p-8">
             <h1 className="font-heading text-2xl font-semibold text-ink-950">Create your account</h1>
             <p className="mt-1.5 text-sm text-ink-500">
-              For clients booking a chef. Are you a chef?{' '}
-              <a href="#" className="font-medium text-buttons">Apply here</a>.
+              For clients booking a chef. Are you a chef? Send a mail to{' '}
+              <a href="mailto:rentachefng@gmail.com" className="font-medium text-buttons">
+                rentachefng@gmail.com
+              </a>{' '}
+              to get onboarded as a chef.
             </p>
 
             <Formik
@@ -240,14 +243,6 @@ export function SignUp() {
                     {touched.password && errors.password ?
                       <p className="mt-1 text-xs font-medium text-red-600">{errors.password}</p> :
                       null}
-                    <div className="mt-1.5 text-right">
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs font-medium text-buttons transition-colors hover:text-ink-900">
-
-                        Forgot password?
-                      </Link>
-                    </div>
                   </div>
 
                   <div>
