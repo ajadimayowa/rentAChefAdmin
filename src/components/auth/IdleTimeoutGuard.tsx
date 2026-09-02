@@ -37,7 +37,7 @@ export function IdleTimeoutGuard() {
     warningOpenRef.current = false;
     setWarningOpen(false);
     logout();
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
     toast[reason === 'timeout' ? 'info' : 'success'](
       reason === 'timeout' ?
       "You've been signed out due to inactivity." :

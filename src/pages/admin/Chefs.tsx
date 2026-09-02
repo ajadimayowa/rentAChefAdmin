@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Check, Plus, ShieldBan, ShieldCheck, Star } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Plus, ShieldBan, ShieldCheck, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
@@ -101,6 +101,12 @@ const emptyChef: ChefFormValues = {
 const errorMessage = (err: unknown, fallback: string): string =>
   err instanceof ApiError ? err.message : fallback;
 
+const PAGE_SIZE = 10;
+// The roster is small enough to load in one request — fetching everything
+// (rather than the backend's default page of results) keeps the category
+// cards above accurate and lets the table paginate client-side.
+const FETCH_LIMIT = 500;
+
 function toChefInput(values: ChefFormValues): ChefInput {
   return {
     name: values.name,
@@ -125,6 +131,7 @@ export function Chefs() {
   const [search, setSearch] = useState('');
   const [chefLevelFilter, setChefLevelFilter] = useState('all');
   const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ChefFormValues | null>(null);
   const [deleting, setDeleting] = useState<Chef | null>(null);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
@@ -135,7 +142,7 @@ export function Chefs() {
   const [serviceOptions, setServiceOptions] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
-    listChefs().
+    listChefs({ limit: FETCH_LIMIT }).
       then((res) => setChefs(res.payload)).
       catch((err) => toast.error(errorMessage(err, 'Could not load chefs.'))).
       finally(() => setLoading(false));
@@ -229,6 +236,18 @@ export function Chefs() {
             c.city.toLowerCase().includes(search.toLowerCase()))
       ),
     [chefs, search, chefLevelFilter, status]
+  );
+
+  // Reset to page 1 whenever the filtered set changes shape, so a stale page
+  // number never leaves the table looking empty.
+  useEffect(() => {
+    setPage(1);
+  }, [search, chefLevelFilter, status]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = useMemo(
+    () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [rows, page]
   );
 
   const columns: Column<Chef>[] = [
@@ -391,12 +410,37 @@ export function Chefs() {
         </Toolbar>
         <DataTable
           columns={columns}
-          rows={rows}
+          rows={pagedRows}
           rowKey={(c) => c.id}
           onRowClick={(c) => navigate(`/admin/chefs/${c.id}`)}
           emptyTitle={loading ? 'Loading chefs…' : 'No chefs found'}
           emptyDescription={loading ? 'Fetching the chef roster.' : 'Adjust the filters or onboard a new chef to the roster.'} />
 
+        {totalPages > 1 &&
+          <div className="flex items-center justify-between border-t border-ink-200 px-5 py-3">
+            <p className="text-xs text-ink-500">Page {page} of {totalPages}</p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<ChevronLeft className="h-4 w-4" />}
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}>
+
+                Prev
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<ChevronRight className="h-4 w-4" />}
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+
+                Next
+              </Button>
+            </div>
+          </div>
+        }
       </Card>
 
       <Modal

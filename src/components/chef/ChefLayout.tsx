@@ -84,7 +84,7 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
             aria-label="Sign out"
             onClick={() => {
               logout();
-              navigate('/login', { replace: true });
+              navigate('/', { replace: true });
             }}
             className="rounded-lg p-2 text-ink-400 hover:bg-white/5 hover:text-white">
 

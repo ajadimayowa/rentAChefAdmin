@@ -74,7 +74,7 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
   return (
     <div className="flex h-full flex-col bg-ink-950 text-ink-300">
       <Link
-        to="/"
+        to="/admin"
         className="flex items-center gap-2.5 border-b border-white/10 px-5 py-5"
         onClick={onNavigate}>
         
@@ -136,7 +136,7 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
             aria-label="Sign out"
             onClick={() => {
               logout();
-              navigate('/login', { replace: true });
+              navigate('/', { replace: true });
             }}
             className="rounded-lg p-2 text-ink-400 hover:bg-white/5 hover:text-white">
 

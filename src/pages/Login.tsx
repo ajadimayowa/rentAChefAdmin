@@ -74,14 +74,14 @@ export function Login() {
 
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/80 to-ink-950/40" />
 
-        <div className="relative z-10 flex items-center gap-2.5 px-10 pt-10">
+        <Link to="/" className="relative z-10 flex items-center gap-2.5 px-10 pt-10">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-light text-ink-950">
             <img src="/rentAChefIconTrans.png" alt="RentAChef" className="h-5 w-5 object-contain" />
           </span>
           <span className="font-heading text-lg font-semibold tracking-tight text-white">
             Rent a Chef
           </span>
-        </div>
+        </Link>
 
         <motion.div
           initial="hidden"
@@ -222,6 +222,14 @@ export function Login() {
                         {touched.password && errors.password ?
                     <p className="mt-1 text-xs font-medium text-red-600">{errors.password}</p> :
                     null}
+                        <div className="mt-1.5 text-right">
+                          <Link
+                        to="/forgot-password"
+                        className="text-xs font-medium text-buttons transition-colors hover:text-ink-900">
+
+                            Forgot password?
+                          </Link>
+                        </div>
                       </div>
 
                       {formError ?
@@ -231,6 +239,11 @@ export function Login() {
                       <Button type="submit" className="w-full" disabled={isSubmitting} size="lg">
                         {isSubmitting ? 'Sending code…' : 'Continue'}
                       </Button>
+
+                      <p className="text-center text-xs text-ink-400">
+                        Don't have an account?{' '}
+                        <Link to="/signup" className="font-medium text-buttons">Create one</Link>
+                      </p>
                     </Form>
                 }
                 </Formik>

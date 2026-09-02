@@ -15,6 +15,7 @@ interface SignUpValues {
   phoneNumber: string;
   password: string;
   confirmPassword: string;
+  agreeToTerms: boolean;
 }
 
 const initialValues: SignUpValues = {
@@ -22,7 +23,8 @@ const initialValues: SignUpValues = {
   email: '',
   phoneNumber: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  agreeToTerms: false
 };
 
 const signUpSchema = Yup.object({
@@ -32,7 +34,8 @@ const signUpSchema = Yup.object({
   password: Yup.string().min(8, 'At least 8 characters').required('Password is required'),
   confirmPassword: Yup.string().
     oneOf([Yup.ref('password')], 'Passwords must match').
-    required('Confirm your password')
+    required('Confirm your password'),
+  agreeToTerms: Yup.boolean().oneOf([true], 'You must agree to the Terms & Privacy Policy to continue')
 });
 
 const fade = {
@@ -63,14 +66,14 @@ export function SignUp() {
 
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/80 to-ink-950/40" />
 
-        <div className="relative z-10 flex items-center gap-2.5 px-10 pt-10">
+        <Link to="/" className="relative z-10 flex items-center gap-2.5 px-10 pt-10">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-light text-ink-950">
             <img src="/rentAChefIconTrans.png" alt="RentAChef" className="h-5 w-5 object-contain" />
           </span>
           <span className="font-heading text-lg font-semibold tracking-tight text-white">
             Rent a Chef
           </span>
-        </div>
+        </Link>
 
         <motion.div
           initial="hidden"
@@ -237,6 +240,14 @@ export function SignUp() {
                     {touched.password && errors.password ?
                       <p className="mt-1 text-xs font-medium text-red-600">{errors.password}</p> :
                       null}
+                    <div className="mt-1.5 text-right">
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs font-medium text-buttons transition-colors hover:text-ink-900">
+
+                        Forgot password?
+                      </Link>
+                    </div>
                   </div>
 
                   <div>
@@ -274,6 +285,30 @@ export function SignUp() {
                     </div>
                     {touched.confirmPassword && errors.confirmPassword ?
                       <p className="mt-1 text-xs font-medium text-red-600">{errors.confirmPassword}</p> :
+                      null}
+                  </div>
+
+                  <div>
+                    <label className="flex cursor-pointer items-start gap-2.5">
+                      <Field
+                        type="checkbox"
+                        name="agreeToTerms"
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-ink-300 text-buttons focus:ring-buttons/40" />
+
+                      <span className="text-xs leading-relaxed text-ink-600">
+                        I have read and agreed to{' '}
+                        <Link to="/terms" target="_blank" className="font-medium text-buttons hover:text-ink-900">
+                          Terms
+                        </Link>{' '}
+                        &{' '}
+                        <Link to="/privacy" target="_blank" className="font-medium text-buttons hover:text-ink-900">
+                          Privacy Policy
+                        </Link>{' '}
+                        of RentAChefNg
+                      </span>
+                    </label>
+                    {touched.agreeToTerms && errors.agreeToTerms ?
+                      <p className="mt-1 text-xs font-medium text-red-600">{errors.agreeToTerms}</p> :
                       null}
                   </div>
 

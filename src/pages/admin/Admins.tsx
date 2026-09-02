@@ -375,7 +375,7 @@ export function Admins() {
                 toast.success('Password updated. Please sign in again.');
                 closePasswordModal();
                 logout();
-                navigate('/login', { replace: true });
+                navigate('/', { replace: true });
               } catch (err) {
                 toast.error(errorMessage(err, 'Could not update password.'));
               } finally {

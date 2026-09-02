@@ -11,7 +11,10 @@ import { ComingSoon } from './components/ui/ComingSoon';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { VerifyEmail } from './pages/VerifyEmail';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { Terms } from './pages/Terms';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Bookings } from './pages/admin/Bookings';
 import { Services } from './pages/admin/Services';
@@ -59,7 +62,10 @@ export function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
 
           <Route
             path="/admin"

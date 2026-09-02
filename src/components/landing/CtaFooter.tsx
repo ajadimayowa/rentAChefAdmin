@@ -49,12 +49,12 @@ export function CtaFooter() {
       <footer className="border-t border-ink-200 bg-white py-12">
         <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 sm:px-8 md:flex-row md:items-start md:justify-between">
           <div className="max-w-sm">
-            <div className="flex items-center gap-2.5">
+            <Link to="/" className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-info text-ink-950">
                 <img src="/rentAChefIconTrans.png" alt="RentAChef" className="h-5 w-5 object-contain" />
               </span>
               <span className="font-heading text-lg font-semibold text-ink-950">Rent a Chef</span>
-            </div>
+            </Link>
             <p className="mt-4 text-sm leading-relaxed text-ink-500">
               Vetted private chefs for dinners, events and weekly meal prep across 14 cities.
             </p>
