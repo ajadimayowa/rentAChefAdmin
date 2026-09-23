@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/format';
 
 const experiences = [
 {
+  id: 'private-dining',
   name: 'Signature Tasting Menu',
   category: 'Private Dining',
   price: 480,
@@ -14,6 +15,7 @@ const experiences = [
   blurb: 'Seven courses, wine pairing guidance and full table service.'
 },
 {
+  id: 'events',
   name: 'Fire & Smoke Feast',
   category: 'Events & Catering',
   price: 2400,
@@ -24,6 +26,7 @@ const experiences = [
   blurb: 'Live-fire cooking with a full brigade for weddings and celebrations.'
 },
 {
+  id: 'meal-prep',
   name: 'Weekly Meal Prep',
   category: 'Meal Prep',
   price: 260,
@@ -61,7 +64,8 @@ export function Experiences() {
           {experiences.map((exp) =>
           <article
             key={exp.name}
-            className="group overflow-hidden rounded-2xl border border-ink-200 bg-white transition-shadow hover:shadow-card">
+            id={exp.id}
+            className="group scroll-mt-24 overflow-hidden rounded-2xl border border-ink-200 bg-white transition-shadow hover:shadow-card">
             
               <div className="aspect-[3/2] overflow-hidden">
                 <img

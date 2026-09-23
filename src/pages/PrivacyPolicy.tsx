@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { LandingNav } from '../components/landing/LandingNav';
 import { Accordion, type AccordionItem } from '../components/ui/Accordion';
 
@@ -271,6 +271,13 @@ const faqItems: AccordionItem[] = [
 
 
 export function PrivacyPolicy() {
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });else
+    window.scrollTo(0, 0);
+  }, [hash]);
+
   return (
     <div className="w-full bg-ink-50">
       <LandingNav />

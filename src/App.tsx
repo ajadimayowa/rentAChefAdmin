@@ -7,6 +7,7 @@ import { ChefLayout } from './components/chef/ChefLayout';
 import { ClientLayout } from './components/client/ClientLayout';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import { IdleTimeoutGuard } from './components/auth/IdleTimeoutGuard';
+import { CookieConsent } from './components/landing/CookieConsent';
 import { ComingSoon } from './components/ui/ComingSoon';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
@@ -16,6 +17,13 @@ import { VerifyEmail } from './pages/VerifyEmail';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Terms } from './pages/Terms';
 import { AccountDeletion } from './pages/AccountDeletion';
+import { About } from './pages/About';
+import { Careers } from './pages/Careers';
+import { Press } from './pages/Press';
+import { Contact } from './pages/Contact';
+import { Classes } from './pages/Classes';
+import { Cancellation } from './pages/Cancellation';
+import { FoodSafety } from './pages/FoodSafety';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Bookings } from './pages/admin/Bookings';
 import { Services } from './pages/admin/Services';
@@ -59,6 +67,7 @@ export function App() {
     <AdminDataProvider>
       <BrowserRouter>
         <IdleTimeoutGuard />
+        <CookieConsent />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -68,6 +77,13 @@ export function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
           <Route path="/account-deletion" element={<AccountDeletion />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/classes" element={<Classes />} />
+          <Route path="/cancellation" element={<Cancellation />} />
+          <Route path="/food-safety" element={<FoodSafety />} />
           <Route path="/terms" element={<Terms />} />
 
           <Route

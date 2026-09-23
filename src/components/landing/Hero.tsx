@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Star } from 'lucide-react';
+import { AppStoreBadges } from './AppStoreBadges';
 
 const fade = {
   hidden: { opacity: 0, y: 18 },
@@ -50,6 +51,10 @@ export function Hero() {
               
               How it works
             </a>
+          </motion.div>
+
+          <motion.div variants={fade} className="mt-8">
+            <AppStoreBadges />
           </motion.div>
 
           <motion.dl
