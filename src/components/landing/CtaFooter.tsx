@@ -2,6 +2,21 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
+const footerColumns: {title: string;items: {label: string;to?: string;}[];}[] = [
+{ title: 'Experiences', items: [{ label: 'Private dining' }, { label: 'Events' }, { label: 'Meal prep' }, { label: 'Classes' }] },
+{ title: 'Company', items: [{ label: 'About' }, { label: 'Careers' }, { label: 'Press' }, { label: 'Contact' }] },
+{
+  title: 'Legal',
+  items: [
+  { label: 'Terms', to: '/terms' },
+  { label: 'Privacy Policy', to: '/privacy-policy' },
+  { label: 'Account deletion', to: '/account-deletion' },
+  { label: 'Cancellation' },
+  { label: 'Food safety' }]
+
+}];
+
+
 export function CtaFooter() {
   return (
     <>
@@ -61,19 +76,21 @@ export function CtaFooter() {
           </div>
 
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
-            {[
-            { title: 'Experiences', items: ['Private dining', 'Events', 'Meal prep', 'Classes'] },
-            { title: 'Company', items: ['About', 'Careers', 'Press', 'Contact'] },
-            { title: 'Legal', items: ['Terms', 'Privacy', 'Cancellation', 'Food safety'] }].
-            map((col) =>
+            {footerColumns.map((col) =>
             <div key={col.title}>
                 <p className="font-heading text-sm font-semibold text-ink-950">{col.title}</p>
                 <ul className="mt-3 space-y-2">
                   {col.items.map((item) =>
-                <li key={item}>
-                      <a href="#book" className="text-sm text-ink-500 hover:text-ink-900">
-                        {item}
-                      </a>
+                <li key={item.label}>
+                      {item.to ?
+                  <Link to={item.to} className="text-sm text-ink-500 hover:text-ink-900">
+                          {item.label}
+                        </Link> :
+
+                  <a href="#book" className="text-sm text-ink-500 hover:text-ink-900">
+                          {item.label}
+                        </a>
+                  }
                     </li>
                 )}
                 </ul>

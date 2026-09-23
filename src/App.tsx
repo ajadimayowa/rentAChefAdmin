@@ -15,6 +15,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Terms } from './pages/Terms';
+import { AccountDeletion } from './pages/AccountDeletion';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Bookings } from './pages/admin/Bookings';
 import { Services } from './pages/admin/Services';
@@ -64,7 +65,9 @@ export function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+          <Route path="/account-deletion" element={<AccountDeletion />} />
           <Route path="/terms" element={<Terms />} />
 
           <Route

@@ -296,7 +296,7 @@ export function SignUp() {
                           Terms
                         </Link>{' '}
                         &{' '}
-                        <Link to="/privacy" target="_blank" className="font-medium text-buttons hover:text-ink-900">
+                        <Link to="/privacy-policy" target="_blank" className="font-medium text-buttons hover:text-ink-900">
                           Privacy Policy
                         </Link>{' '}
                         of RentAChefNg
