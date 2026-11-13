@@ -3,40 +3,41 @@ import { Star } from 'lucide-react';
 
 const chefs = [
 {
-  name: 'Antoine Dubois',
-  tier: 'Signature',
-  city: 'San Francisco',
-  cuisines: 'French · Modern European',
+  name: 'Bassey Veronica',
+  photo: '/featuredchefs/BasseyVeronica.jpg',
+  tier: 'Executive Chef',
+  city: 'Lagos Mainland',
+  cuisines: 'Continental · Local',
   rating: 4.9,
   jobs: 212
 },
 {
-  name: 'Naledi Mokoena',
-  tier: 'Executive',
-  city: 'Brooklyn',
+  name: 'Funmilayo Omogboye',
+  photo: '/featuredchefs/FunmilayoOmogboye.jpg',
+  tier: 'Sous Chef',
+  city: 'Lagos Island',
   cuisines: 'Pan-African · Fusion',
   rating: 4.8,
   jobs: 164
 },
 {
-  name: 'Kenji Watanabe',
-  tier: 'Executive',
-  city: 'Chicago',
-  cuisines: 'Japanese · Kaiseki',
+  name: 'Okanlawon Olumide',
+  photo: '/featuredchefs/OkanlawonOlumide.jpg',
+  tier: 'Junior Chef',
+  city: 'Surulere',
+  cuisines: 'Continental',
   rating: 4.9,
   jobs: 187
 },
 {
-  name: 'Renzo Alcantara',
-  tier: 'Premium',
-  city: 'Miami',
-  cuisines: 'Peruvian · Seafood',
+  name: 'Ibrahim Taiwo',
+  photo: '/featuredchefs/IbrahimTaiwo.jpg',
+  tier: 'Junior Chef',
+  city: 'Lagos Mainland',
+  cuisines: 'Local',
   rating: 4.7,
   jobs: 98
 }];
-
-
-const avatar = "/1a869219-57d2-43b6-88b5-a521f3f41fdf.jpg";
 
 
 export function ChefsShowcase() {
@@ -63,7 +64,7 @@ export function ChefsShowcase() {
             className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors hover:border-buttons/40">
             
               <img
-              src={avatar}
+              src={chef.photo}
               alt={chef.name}
               className="h-16 w-16 rounded-full object-cover ring-2 ring-buttons/40" />
             
