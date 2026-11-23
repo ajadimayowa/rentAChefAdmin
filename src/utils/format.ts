@@ -1,20 +1,16 @@
+export const NAIRA = '₦';
+
+// Rent a Chef is Nigerian — every amount is in naira. The ₦ sign is added by hand
+// because some browsers render Intl's NGN currency style as "NGN" instead of "₦".
+const safe = (value: number) => Number.isFinite(value) ? value : 0;
+
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(Number.isFinite(value) ? value : 0);
+  return `${NAIRA}${safe(value).toLocaleString('en-NG', { maximumFractionDigits: 0 })}`;
 }
 
 export function formatCurrencyPrecise(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2
-  }).format(Number.isFinite(value) ? value : 0);
+  return `${NAIRA}${safe(value).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
-
-export const NAIRA = '₦';
 
 /**
  * Naira currency formatter — mirrors the mobile app's `convertToThousand` helper

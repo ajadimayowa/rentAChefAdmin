@@ -25,6 +25,7 @@ import {
   ImageField,
   MultiSelectSearchField,
   NumberField,
+  PhoneField,
   SearchSelectField,
   SelectField,
   TagsField,
@@ -35,6 +36,7 @@ import {
 '../../components/form/Fields';
 import { useAuthStore } from '../../store/authStore';
 import { formatDate, titleCase } from '../../utils/format';
+import { isValidNigerianPhone, toE164Nigerian, toPhoneInput } from '../../utils/phone';
 import { ApiError } from '../../config/api';
 import {
   getChefProfile,
@@ -63,7 +65,9 @@ interface ProfileFormValues {
 
 const schema = Yup.object({
   name: Yup.string().required('Your name is required'),
-  phone: Yup.string().required('Phone number is required'),
+  phone: Yup.string().required('Phone number is required').
+    matches(/^\d+$/, 'Numbers only').
+    test('ng-phone', 'Enter a valid Nigerian number, e.g. 08012345678', (v) => isValidNigerianPhone(v ?? '')),
   state: Yup.object({ stateId: Yup.string().required('Select a state') }),
   city: Yup.string().required('Select a city'),
   yearsOfExperience: Yup.number().
@@ -162,7 +166,7 @@ export function ChefProfilePage() {
 
   const initialValues: ProfileFormValues = {
     name: profile.name,
-    phone: profile.phone,
+    phone: toPhoneInput(profile.phone),
     gender: profile.gender ?? '',
     dob: profile.dob ? profile.dob.slice(0, 10) : '',
     state: profile.state,
@@ -348,7 +352,7 @@ export function ChefProfilePage() {
             try {
               const updated = await updateChefProfile(profile.id, {
                 name: values.name,
-                phone: values.phone,
+                phone: toE164Nigerian(values.phone),
                 gender: values.gender || undefined,
                 dob: values.dob || undefined,
                 state: values.state,
@@ -381,7 +385,7 @@ export function ChefProfilePage() {
 
                 <FormGrid>
                   <TextField name="name" label="Full name" placeholder="Antoine Dubois" />
-                  <TextField name="phone" label="Phone" placeholder="+234 800 000 0000" />
+                  <PhoneField name="phone" label="Phone" placeholder="08012345678" />
                 </FormGrid>
                 <FormGrid>
                   <SearchSelectField

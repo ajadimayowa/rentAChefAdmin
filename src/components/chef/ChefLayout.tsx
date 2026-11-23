@@ -1,16 +1,63 @@
 import {
-  Bell,
   CalendarCheck,
+  CalendarClock,
+  Info,
   LayoutDashboard,
   LogOut,
   Menu as MenuIcon,
+  MessageSquare,
   User,
   UtensilsCrossed,
   X } from
 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { NotificationBell, type NotificationSource } from '../notifications/NotificationBell';
+import { getMyConversation } from '../../services/chef/messagingServices';
+import {
+  getMyNotificationUnreadCount,
+  listMyNotifications,
+  markAllMyNotificationsRead,
+  markMyNotificationRead } from
+'../../services/myNotificationServices';
+import { CHEF_MESSAGES_READ_EVENT } from '../../pages/chef/Messages';
+
+const UNREAD_POLL_MS = 30_000;
+
+/** Unread messages from the admin team, for the sidebar badge and the bell. */
+function useUnreadMessages(): number {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () =>
+    getMyConversation().
+    then((c) => !cancelled && setCount(c.unreadForParticipant ?? 0)).
+    catch(() => undefined);
+    refresh();
+    const poll = setInterval(refresh, UNREAD_POLL_MS);
+    window.addEventListener(CHEF_MESSAGES_READ_EVENT, refresh);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      window.removeEventListener(CHEF_MESSAGES_READ_EVENT, refresh);
+    };
+  }, []);
+  return count;
+}
+
+const notificationSource: NotificationSource = {
+  list: () => listMyNotifications(),
+  unreadCount: getMyNotificationUnreadCount,
+  markRead: markMyNotificationRead,
+  markAllRead: markAllMyNotificationsRead
+};
+
+const NOTIFICATION_ICONS: Record<string, React.ReactNode> = {
+  'booking-assignment': <CalendarCheck className="h-4 w-4" />,
+  'booking-status-update': <CalendarClock className="h-4 w-4" />,
+  'system-alert': <Info className="h-4 w-4" />
+};
 
 interface NavItem {
   to: string;
@@ -22,10 +69,11 @@ const navItems: NavItem[] = [
 { to: '/chef', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
 { to: '/chef/bookings', label: 'My Bookings', icon: <CalendarCheck className="h-4 w-4" /> },
 { to: '/chef/menus', label: 'My Menus', icon: <UtensilsCrossed className="h-4 w-4" /> },
+{ to: '/chef/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
 { to: '/chef/profile', label: 'My Profile', icon: <User className="h-4 w-4" /> }];
 
 
-function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
+function SidebarContent({ onNavigate, unreadMessages }: {onNavigate?: () => void;unreadMessages: number;}) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
@@ -65,7 +113,15 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
           }>
 
             {item.icon}
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.to === '/chef/messages' && unreadMessages > 0 ?
+            <span
+              className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white"
+              aria-label={`${unreadMessages} unread messages`}>
+
+                {unreadMessages > 99 ? '99+' : unreadMessages}
+              </span> :
+            null}
           </NavLink>
         )}
       </nav>
@@ -99,13 +155,14 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
 export function ChefLayout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const unreadMessages = useUnreadMessages();
   const current = navItems.find((i) => i.to === location.pathname)?.label ?? 'Dashboard';
 
   return (
     <div className="flex min-h-screen w-full bg-ink-50">
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="fixed inset-y-0 left-0 w-64">
-          <SidebarContent />
+          <SidebarContent unreadMessages={unreadMessages} />
         </div>
       </aside>
 
@@ -117,7 +174,7 @@ export function ChefLayout() {
           aria-hidden="true" />
 
           <div className="absolute inset-y-0 left-0 w-72">
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent unreadMessages={unreadMessages} onNavigate={() => setOpen(false)} />
           </div>
         </div> :
       null}
@@ -136,14 +193,13 @@ export function ChefLayout() {
             <p className="text-xs text-ink-400">Chef</p>
             <p className="truncate font-heading text-sm font-semibold text-ink-950">{current}</p>
           </div>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative rounded-lg p-2 text-ink-600 hover:bg-ink-100">
-
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-buttons" />
-          </button>
+          <NotificationBell
+            source={notificationSource}
+            unreadMessages={unreadMessages}
+            messagesPath="/chef/messages"
+            messagesTitle={(n) => `${n} unread message${n === 1 ? '' : 's'}`}
+            messagesHint="The admin team sent you a message."
+            icons={NOTIFICATION_ICONS} />
         </header>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

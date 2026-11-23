@@ -139,7 +139,7 @@ export function Login() {
             <>
                 <h1 className="font-heading text-2xl font-semibold text-ink-950">Welcome back</h1>
                 <p className="mt-1.5 text-sm text-ink-500">
-                  Login in with your registered email address.
+                  Log in with your registered email address.
                 </p>
 
                 <Formik

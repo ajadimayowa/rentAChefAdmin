@@ -1,3 +1,4 @@
+import type { ProcurementRecord } from '../admin/procurementServices';
 import { api, type ApiItemResponse } from '../../config/api';
 
 export interface BookingPartyRef {
@@ -63,6 +64,25 @@ export interface BookingPaymentDetails {
 
 // Shared detail shape rendered by the admin/chef/customer "view booking" pages —
 // each page presents this differently, but it's the same underlying booking.
+export type ChefResponseStatus = 'pending' | 'accepted' | 'declined';
+
+/** The assigned chef's answer to an assignment. */
+export interface ChefResponse {
+  chefId?: string;
+  status: ChefResponseStatus;
+  assignedAt?: string;
+  respondedAt?: string;
+  reason?: string;
+}
+
+/** A chef who turned the booking down (only returned to admins). */
+export interface DeclinedChef {
+  chefId: string;
+  chefName?: string;
+  reason?: string;
+  declinedAt: string;
+}
+
 export interface BookingDetail {
   id: string;
   bookingNumber: string;
@@ -84,6 +104,10 @@ export interface BookingDetail {
   paymentDetails?: BookingPaymentDetails;
   transactnRef?: string;
   quotationId?: string;
+  chefResponse?: ChefResponse;
+  declinedChefs?: DeclinedChef[];
+  /** Procurement documents + amounts the admin raised, newest first. */
+  procurements?: ProcurementRecord[];
   date: string;
   guests: number | null;
   createdAt: string;

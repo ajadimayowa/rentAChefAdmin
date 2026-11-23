@@ -15,11 +15,21 @@ interface RawNamedRef {
   description?: string;
 }
 
+// Refs are populated objects, but tolerate bare id strings so a saved rule can never
+// lose its chef category / target id (which is what places it on the cards).
+type RawRef = RawNamedRef | string;
+
+const refId = (ref?: RawRef | null): string =>
+typeof ref === 'string' ? ref : ref?.id ?? '';
+
+const refLabel = (ref: RawRef | null | undefined, key: 'name' | 'title'): string =>
+typeof ref === 'object' && ref ? ref[key] || '—' : '—';
+
 interface RawServicePricing {
   id: string;
-  serviceId?: RawNamedRef;
-  specialServiceId?: RawNamedRef;
-  chefCategoryId: RawNamedRef;
+  serviceId?: RawRef | null;
+  specialServiceId?: RawRef | null;
+  chefCategoryId: RawRef;
   pricingType: PricingType;
   numberOfDays?: number;
   monthlySubFee?: number;
@@ -52,17 +62,17 @@ export interface AdminServicePricing {
 
 function mapServicePricing(raw: RawServicePricing): AdminServicePricing {
   const target = raw.serviceId ?
-  { type: 'service' as const, id: raw.serviceId.id, name: raw.serviceId.name || '—' } :
+  { type: 'service' as const, id: refId(raw.serviceId), name: refLabel(raw.serviceId, 'name') } :
   {
     type: 'specialService' as const,
-    id: raw.specialServiceId?.id || '',
-    name: raw.specialServiceId?.title || '—'
+    id: refId(raw.specialServiceId),
+    name: refLabel(raw.specialServiceId, 'title')
   };
 
   return {
     id: raw.id,
     target,
-    chefCategory: { id: raw.chefCategoryId?.id, name: raw.chefCategoryId?.name || '—' },
+    chefCategory: { id: refId(raw.chefCategoryId), name: refLabel(raw.chefCategoryId, 'name') },
     pricingType: raw.pricingType,
     numberOfDays: raw.numberOfDays,
     monthlySubFee: raw.monthlySubFee,

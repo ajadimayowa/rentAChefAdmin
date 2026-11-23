@@ -26,6 +26,7 @@ import {
   listServiceCategories,
   type AdminService } from
 '../../services/admin/adminServices';
+import { listChefLevels } from '../../services/admin/chefLevelServices';
 import {
   createServiceTerm,
   deleteServiceTerm,
@@ -47,6 +48,7 @@ const termSchema = Yup.object({
 export function ViewServicePage() {
   const { id } = useParams<{id: string;}>();
   const [service, setService] = useState<AdminService | null>(null);
+  const [chefLevelNamesById, setChefLevelNamesById] = useState<Map<string, string>>(new Map());
   const [terms, setTerms] = useState<ServiceTerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [termsLoading, setTermsLoading] = useState(true);
@@ -73,6 +75,10 @@ export function ViewServicePage() {
     catch((err) => toast.error(errorMessage(err, 'Could not load this service.'))).
     finally(() => setLoading(false));
     loadTerms(id);
+    // Only used to label the eligible chef levels, so a failure here is non-fatal.
+    listChefLevels().
+    then((levels) => setChefLevelNamesById(new Map(levels.map((l) => [l.id, l.name])))).
+    catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -146,7 +152,7 @@ export function ViewServicePage() {
                 <div className="mt-1 flex flex-wrap gap-1">
                   {service.allowedChefLevels.length ?
                   service.allowedChefLevels.map((l) =>
-                  <Badge key={l} tone="neutral">{titleCase(l)}</Badge>
+                  <Badge key={l} tone="neutral">{chefLevelNamesById.get(l) ?? 'Inactive level'}</Badge>
                   ) :
 
                   <span className="text-ink-500">Any</span>
@@ -239,9 +245,13 @@ export function ViewServicePage() {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Icon" />
-            <div className="flex items-center justify-center p-8 text-4xl">
-              {service.icon || '—'}
+            <CardHeader title="Service picture" />
+            <div className="p-5">
+              {service.image ?
+              <img src={service.image} alt={service.name} className="w-full rounded-lg object-cover" /> :
+
+              <p className="py-6 text-center text-sm text-ink-500">No picture yet — add one from Edit on the Services page.</p>
+              }
             </div>
           </Card>
         </div>

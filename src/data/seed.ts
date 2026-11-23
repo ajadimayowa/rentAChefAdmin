@@ -6,48 +6,8 @@ import type {
   ChefCategoryPrice,
   Menu,
   Package,
-  Service,
-  ServiceCategory } from
+  Service } from
 '../types';
-
-export const serviceCategories: ServiceCategory[] = [
-{
-  id: 'cat_private',
-  name: 'Private Dining',
-  slug: 'private-dining',
-  description: 'Multi-course dining experiences hosted in the client’s home.',
-  icon: 'UtensilsCrossed',
-  status: 'active',
-  createdAt: '2025-11-04'
-},
-{
-  id: 'cat_events',
-  name: 'Events & Catering',
-  slug: 'events-catering',
-  description: 'Weddings, corporate functions and large format catering.',
-  icon: 'PartyPopper',
-  status: 'active',
-  createdAt: '2025-12-12'
-},
-{
-  id: 'cat_weekly',
-  name: 'Weekly Meal Prep',
-  slug: 'weekly-meal-prep',
-  description: 'Recurring in-home batch cooking and nutrition plans.',
-  icon: 'CalendarRange',
-  status: 'active',
-  createdAt: '2026-01-19'
-},
-{
-  id: 'cat_class',
-  name: 'Cooking Classes',
-  slug: 'cooking-classes',
-  description: 'Hands-on technique workshops led by a professional chef.',
-  icon: 'GraduationCap',
-  status: 'inactive',
-  createdAt: '2026-02-28'
-}];
-
 
 export const services: Service[] = [
 {

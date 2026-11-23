@@ -68,6 +68,38 @@ export function TextField({
 
 }
 
+/**
+ * Nigerian phone input: a fixed "+234" prefix with a digits-only box (max 11 so a
+ * leading 0 is allowed). Non-digits are dropped as you type; convert the value with
+ * utils/phone.ts → toE164Nigerian before saving.
+ */
+export function PhoneField(props: BaseProps) {
+  const [field, meta, helpers] = useField<string>(props.name);
+  const bad = Boolean(meta.touched && meta.error);
+  return (
+    <Wrapper {...props} error={meta.error} touched={meta.touched}>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-500">
+          +234
+        </span>
+        <input
+          id={props.name}
+          name={props.name}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          maxLength={11}
+          placeholder={props.placeholder}
+          onBlur={field.onBlur}
+          value={field.value ?? ''}
+          onChange={(e) => helpers.setValue(e.target.value.replace(/\D/g, '').slice(0, 11))}
+          className={`${baseInput} ${bad ? errBorder : okBorder} pl-12`} />
+
+      </div>
+    </Wrapper>);
+
+}
+
 export function NumberField({
   step = 'any',
   prefix,

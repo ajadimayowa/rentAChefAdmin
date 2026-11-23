@@ -20,11 +20,12 @@ export function AssignChefModal({
   onClose,
   bookingId,
   currentChefId,
+  declinedChefIds = [],
   onAssigned
 
 
 
-}: {open: boolean;onClose: () => void;bookingId: string;currentChefId?: string;onAssigned: (chef: AssignedChef, status: string) => void;}) {
+}: {open: boolean;onClose: () => void;bookingId: string;currentChefId?: string;declinedChefIds?: string[];onAssigned: (chef: AssignedChef, status: string) => void;}) {
   const [chefs, setChefs] = useState<{id: string;label: string;}[]>([]);
   const [loadingChefs, setLoadingChefs] = useState(false);
 
@@ -32,15 +33,30 @@ export function AssignChefModal({
     if (!open) return;
     setLoadingChefs(true);
     listChefs({ status: 'approved', limit: 200 }).
-    then((res) => setChefs(res.payload.map((c) => ({ id: c.id, label: c.name })))).
+    then((res) =>
+    setChefs(
+      res.payload.map((c) => ({
+        id: c.id,
+        // Flag chefs who already turned this booking down.
+        label: declinedChefIds.includes(c.id) ? `${c.name} (declined this booking)` : c.name
+      }))
+    )
+    ).
     catch(() => toast.error('Could not load chefs.')).
     finally(() => setLoadingChefs(false));
   }, [open]);
 
   return (
-    <Modal open={open} onClose={onClose} title="Assign chef" description="Pick a specific chef to assign to this booking." size="md">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={currentChefId ? 'Reassign chef' : 'Assign chef'}
+      description="Pick a chef for this booking. They'll be asked to accept or decline it."
+      size="md">
+
       <Formik
-        initialValues={{ chefId: currentChefId ?? '' }}
+        // Start empty when reassigning, so the admin actively picks someone new.
+        initialValues={{ chefId: '' }}
         enableReinitialize
         validationSchema={schema}
         onSubmit={async (values, helpers) => {

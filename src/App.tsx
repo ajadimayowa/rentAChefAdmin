@@ -52,6 +52,7 @@ import { HomeResidenceBookingPage } from './pages/admin/bookings/HomeResidenceBo
 import { GeneralBookingPage } from './pages/admin/bookings/GeneralBookingPage';
 import { Charges } from './pages/admin/Charges';
 import { ChefTierPricing } from './pages/admin/ChefTierPricing';
+import { Messages } from './pages/admin/Messages';
 import { TermsAndConditions } from './pages/admin/TermsAndConditions';
 import { ChefDashboard } from './pages/chef/Dashboard';
 import { ChefBookings } from './pages/chef/Bookings';
@@ -59,6 +60,7 @@ import { ViewChefBooking } from './pages/chef/ViewChefBooking';
 import { ChefMenus } from './pages/chef/Menus';
 import { ViewChefMenu } from './pages/chef/ViewChefMenu';
 import { ChefProfilePage } from './pages/chef/Profile';
+import { ChefMessages } from './pages/chef/Messages';
 import { ClientDashboard } from './pages/client/Dashboard';
 import { ViewBookingPage as ClientViewBookingPage } from './pages/client/ViewBookingPage';
 
@@ -123,6 +125,7 @@ export function App() {
             <Route path="charges" element={<Charges />} />
             <Route path="chef-pricing" element={<ChefTierPricing />} />
             <Route path="terms" element={<TermsAndConditions />} />
+            <Route path="messages" element={<Messages />} />
           </Route>
 
           <Route
@@ -139,6 +142,7 @@ export function App() {
             <Route path="menus" element={<ChefMenus />} />
             <Route path="menus/:id" element={<ViewChefMenu />} />
             <Route path="profile" element={<ChefProfilePage />} />
+            <Route path="messages" element={<ChefMessages />} />
           </Route>
 
           <Route

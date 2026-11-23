@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Bell,
   CalendarCheck,
   ChefHat,
   ClipboardList,
@@ -10,6 +9,7 @@ import {
   Layers,
   LogOut,
   Menu as MenuIcon,
+  MessageSquare,
   Package as PackageIcon,
   ScrollText,
   ShieldCheck,
@@ -22,6 +22,32 @@ import {
   HardHat} from
 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { getUnreadConversationCount } from '../../services/admin/messagingServices';
+import { MESSAGES_READ_EVENT } from '../../pages/admin/Messages';
+import { NotificationBell } from './NotificationBell';
+
+const UNREAD_POLL_MS = 30_000;
+
+/** Number of conversations with unread chef/client messages, for the sidebar badge. */
+function useUnreadMessages(): number {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () =>
+    getUnreadConversationCount().
+    then((n) => !cancelled && setCount(n)).
+    catch(() => undefined);
+    refresh();
+    const poll = setInterval(refresh, UNREAD_POLL_MS);
+    window.addEventListener(MESSAGES_READ_EVENT, refresh);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      window.removeEventListener(MESSAGES_READ_EVENT, refresh);
+    };
+  }, []);
+  return count;
+}
 
 interface NavItem {
   to: string;
@@ -34,7 +60,8 @@ const navGroups: {title: string;items: NavItem[];}[] = [
   title: 'Overview',
   items: [
   { to: '/admin', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { to: '/admin/bookings', label: 'Bookings', icon: <CalendarCheck className="h-4 w-4" /> }]
+  { to: '/admin/bookings', label: 'Bookings', icon: <CalendarCheck className="h-4 w-4" /> },
+  { to: '/admin/messages', label: 'Messaging', icon: <MessageSquare className="h-4 w-4" /> }]
 
 },
 {
@@ -66,7 +93,7 @@ const navGroups: {title: string;items: NavItem[];}[] = [
 }];
 
 
-function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
+function SidebarContent({ onNavigate, unreadMessages }: {onNavigate?: () => void;unreadMessages: number;}) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
@@ -113,7 +140,15 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
                 }>
                 
                     {item.icon}
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {item.to === '/admin/messages' && unreadMessages > 0 ?
+                <span
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white"
+                  aria-label={`${unreadMessages} unread conversations`}>
+
+                        {unreadMessages > 99 ? '99+' : unreadMessages}
+                      </span> :
+                null}
                   </NavLink>
                 </li>
             )}
@@ -149,6 +184,8 @@ function SidebarContent({ onNavigate }: {onNavigate?: () => void;}) {
 }
 
 export function AdminLayout() {
+  // Fetched once here and shared by the sidebar badge and the top-bar bell.
+  const unreadMessages = useUnreadMessages();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const current =
@@ -158,7 +195,7 @@ export function AdminLayout() {
     <div className="flex min-h-screen w-full bg-ink-50">
       <aside className="hidden w-64 shrink-0 lg:block">
         <div className="fixed inset-y-0 left-0 w-64">
-          <SidebarContent />
+          <SidebarContent unreadMessages={unreadMessages} />
         </div>
       </aside>
 
@@ -170,7 +207,7 @@ export function AdminLayout() {
           aria-hidden="true" />
         
           <div className="absolute inset-y-0 left-0 w-72">
-            <SidebarContent onNavigate={() => setOpen(false)} />
+            <SidebarContent unreadMessages={unreadMessages} onNavigate={() => setOpen(false)} />
           </div>
         </div> :
       null}
@@ -195,14 +232,7 @@ export function AdminLayout() {
             
             View site
           </Link>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative rounded-lg p-2 text-ink-600 hover:bg-ink-100">
-            
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-buttons" />
-          </button>
+          <NotificationBell unreadMessages={unreadMessages} />
         </header>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

@@ -57,21 +57,6 @@ export function Hero() {
             <AppStoreBadges />
           </motion.div>
 
-          <motion.dl
-            variants={fade}
-            className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-8">
-            
-            {[
-            { value: '1,200+', label: 'Dinners served' },
-            { value: '180', label: 'Vetted chefs' },
-            { value: '4.9', label: 'Average rating' }].
-            map((stat) =>
-            <div key={stat.label}>
-                <dt className="font-heading text-2xl font-semibold text-white">{stat.value}</dt>
-                <dd className="mt-1 text-xs uppercase tracking-wide text-ink-400">{stat.label}</dd>
-              </div>
-            )}
-          </motion.dl>
         </motion.div>
 
         <motion.div

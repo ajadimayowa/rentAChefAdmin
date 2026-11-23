@@ -5,7 +5,8 @@ import { Hero } from '../components/landing/Hero';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { Experiences } from '../components/landing/Experiences';
 import { ChefsShowcase } from '../components/landing/ChefsShowcase';
-import { Testimonials } from '../components/landing/Testimonials';
+import { LagosRibbon } from '../components/landing/LagosRibbon';
+import { LagosLife } from '../components/landing/LagosLife';
 import { CtaFooter } from '../components/landing/CtaFooter';
 
 export function Landing() {
@@ -22,10 +23,11 @@ export function Landing() {
       <LandingNav />
       <main>
         <Hero />
+        <LagosRibbon />
         <HowItWorks />
         <Experiences />
+        <LagosLife />
         <ChefsShowcase />
-        <Testimonials />
         <CtaFooter />
       </main>
     </div>);
