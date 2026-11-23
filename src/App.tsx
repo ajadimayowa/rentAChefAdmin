@@ -60,6 +60,7 @@ import { ViewChefBooking } from './pages/chef/ViewChefBooking';
 import { ChefMenus } from './pages/chef/Menus';
 import { ViewChefMenu } from './pages/chef/ViewChefMenu';
 import { ChefProfilePage } from './pages/chef/Profile';
+import { ChefMessages } from './pages/chef/Messages';
 import { ClientDashboard } from './pages/client/Dashboard';
 import { ViewBookingPage as ClientViewBookingPage } from './pages/client/ViewBookingPage';
 
@@ -141,6 +142,7 @@ export function App() {
             <Route path="menus" element={<ChefMenus />} />
             <Route path="menus/:id" element={<ViewChefMenu />} />
             <Route path="profile" element={<ChefProfilePage />} />
+            <Route path="messages" element={<ChefMessages />} />
           </Route>
 
           <Route

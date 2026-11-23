@@ -1,4 +1,5 @@
 import { tokenStorage } from '../lib/tokenStorage';
+import { prepareUploadForm, UploadTooLargeError } from '../utils/compressImage';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
@@ -49,6 +50,18 @@ options?: ApiRequestOptions)
 : Promise<T> {
   const isFormData = body instanceof FormData;
 
+  // Every upload goes through here: images are compressed on the device and no
+  // file may exceed 2 MB.
+  let form: FormData | null = null;
+  if (isFormData) {
+    try {
+      form = await prepareUploadForm(body as FormData);
+    } catch (err) {
+      if (err instanceof UploadTooLargeError) throw new ApiError(err.message, 413, undefined);
+      throw err;
+    }
+  }
+
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...options?.headers
@@ -61,7 +74,7 @@ options?: ApiRequestOptions)
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
+    body: body === undefined ? undefined : form ?? JSON.stringify(body),
     signal: options?.signal
   });
 

@@ -1,21 +1,30 @@
-import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal, ModalFooter } from '../../ui/Modal';
 import { Button } from '../../ui/Button';
-import { createBookingProcurement, type ProcurementRecord } from '../../../services/admin/procurementServices';
+import {
+  createBookingProcurement,
+  PROCUREMENT_PDF_MAX_BYTES,
+  type ProcurementRecord } from
+'../../../services/admin/procurementServices';
 import { ApiError } from '../../../config/api';
 
 const errorMessage = (err: unknown, fallback: string): string =>
 err instanceof ApiError ? err.message : fallback;
 
-interface Row {
-  title: string;
-  description: string;
-  amount: string;
-}
+const MAX_MB = PROCUREMENT_PDF_MAX_BYTES / (1024 * 1024);
 
-const emptyRow = (): Row => ({ title: '', description: '', amount: '' });
+/** Keeps only digits and one decimal point with at most 2 decimal places. */
+const sanitizeAmount = (value: string): string => {
+  const cleaned = value.replace(/[^\d.]/g, '');
+  const [whole, ...rest] = cleaned.split('.');
+  if (rest.length === 0) return whole;
+  return `${whole}.${rest.join('').slice(0, 2)}`;
+};
+
+const formatSize = (bytes: number) =>
+bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 export function AddProcurementModal({
   open,
@@ -26,44 +35,49 @@ export function AddProcurementModal({
 
 
 }: {open: boolean;onClose: () => void;bookingId: string;onCreated: (record: ProcurementRecord) => void;}) {
-  const [rows, setRows] = useState<Row[]>([emptyRow()]);
+  const [file, setFile] = useState<File | null>(null);
+  const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<{file?: string;amount?: string;}>({});
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const close = () => {
-    setRows([emptyRow()]);
+    setFile(null);
+    setAmount('');
+    setErrors({});
     onClose();
   };
 
-  const updateRow = (index: number, patch: Partial<Row>) => {
-    setRows((prev) => prev.map((r, i) => i === index ? { ...r, ...patch } : r));
+  const pickFile = (picked: File | undefined) => {
+    if (!picked) return;
+    const isPdf = picked.type === 'application/pdf' || /\.pdf$/i.test(picked.name);
+    if (!isPdf) {
+      setErrors((e) => ({ ...e, file: 'Only PDF files are allowed.' }));
+      return;
+    }
+    if (picked.size > PROCUREMENT_PDF_MAX_BYTES) {
+      setErrors((e) => ({ ...e, file: `The PDF must be ${MAX_MB} MB or smaller.` }));
+      return;
+    }
+    setFile(picked);
+    setErrors((e) => ({ ...e, file: undefined }));
   };
 
-  const removeRow = (index: number) => {
-    setRows((prev) => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
-  };
-
-  const total = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const numericAmount = Number(amount);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const items = rows.
-    filter((r) => r.title.trim() && Number(r.amount) > 0).
-    map((r) => ({
-      title: r.title.trim(),
-      description: r.description.trim() || undefined,
-      amount: Number(r.amount)
-    }));
-
-    if (items.length === 0) {
-      toast.error('Add at least one item with a title and amount.');
-      return;
-    }
+    const nextErrors: typeof errors = {};
+    if (!file) nextErrors.file = 'Upload the procurement PDF.';
+    if (!amount || !(numericAmount > 0)) nextErrors.amount = 'Enter the total amount.';
+    setErrors(nextErrors);
+    if (!file || nextErrors.amount) return;
 
     setSubmitting(true);
     try {
-      const res = await createBookingProcurement(bookingId, items);
+      const res = await createBookingProcurement(bookingId, file, amount);
       onCreated(res.payload);
-      toast.success('Procurement added to booking.');
+      toast.success('Procurement added — the client has been notified.');
       close();
     } catch (err) {
       toast.error(errorMessage(err, 'Could not add procurement.'));
@@ -73,63 +87,95 @@ export function AddProcurementModal({
   };
 
   return (
-    <Modal open={open} onClose={close} title="Add procurement" description="Record grocery/ingredient items and their cost for this booking." size="lg">
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-3 p-6">
-          {rows.map((row, i) =>
-          <div key={i} className="flex items-start gap-2 rounded-lg border border-ink-200 p-3">
-              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-[2fr_2fr_1fr]">
-                <input
-                type="text"
-                value={row.title}
-                onChange={(e) => updateRow(i, { title: e.target.value })}
-                placeholder="Item title"
-                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-buttons focus:outline-none focus:ring-2 focus:ring-buttons/25" />
+    <Modal
+      open={open}
+      onClose={close}
+      title="Add procurement"
+      description="Upload the procurement PDF and the total the client should pay. The client is notified to view it and make payment."
+      size="md">
 
-                <input
-                type="text"
-                value={row.description}
-                onChange={(e) => updateRow(i, { description: e.target.value })}
-                placeholder="Description (optional)"
-                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-buttons focus:outline-none focus:ring-2 focus:ring-buttons/25" />
+      <form onSubmit={handleSubmit} noValidate>
+        <div className="space-y-5 p-6">
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-ink-800">Procurement PDF</p>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                pickFile(e.target.files?.[0]);
+                e.target.value = ''; // allow re-picking the same file
+              }} />
 
-                <input
-                type="number"
-                min="0"
-                step="any"
-                value={row.amount}
-                onChange={(e) => updateRow(i, { amount: e.target.value })}
-                placeholder="Amount"
-                className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-buttons focus:outline-none focus:ring-2 focus:ring-buttons/25" />
+            {file ?
+            <div className="flex items-center gap-3 rounded-lg border border-ink-200 bg-ink-50 px-3 py-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                  <FileText className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink-900">{file.name}</p>
+                  <p className="text-xs text-ink-500">{formatSize(file.size)}</p>
+                </div>
+                <button
+                type="button"
+                onClick={() => setFile(null)}
+                aria-label="Remove file"
+                className="rounded-lg p-1.5 text-ink-400 hover:bg-white hover:text-ink-700">
 
-              </div>
-              <button
+                  <X className="h-4 w-4" />
+                </button>
+              </div> :
+
+            <button
               type="button"
-              onClick={() => removeRow(i)}
-              disabled={rows.length === 1}
-              aria-label="Remove item"
-              className="mt-1.5 shrink-0 rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-30">
+              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                pickFile(e.dataTransfer.files?.[0]);
+              }}
+              className={`flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors hover:border-buttons hover:bg-buttons/5 ${
+              errors.file ? 'border-red-300' : 'border-ink-200'}`
+              }>
 
-                <Trash2 className="h-4 w-4" />
+                <Upload className="h-5 w-5 text-ink-400" />
+                <span className="text-sm font-medium text-ink-800">Click to upload or drag a PDF here</span>
+                <span className="text-xs text-ink-500">PDF only, up to {MAX_MB} MB</span>
               </button>
+            }
+            {errors.file ? <p className="mt-1.5 text-xs text-red-600">{errors.file}</p> : null}
+          </div>
+
+          <div>
+            <label htmlFor="procurement-total" className="mb-1.5 block text-sm font-medium text-ink-800">
+              Total amount
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400">₦</span>
+              <input
+                id="procurement-total"
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(sanitizeAmount(e.target.value));
+                  setErrors((er) => ({ ...er, amount: undefined }));
+                }}
+                placeholder="0.00"
+                className={`w-full rounded-lg border bg-white py-2 pl-7 pr-3 text-sm text-ink-900 placeholder:text-ink-400 focus:border-buttons focus:outline-none focus:ring-2 focus:ring-buttons/25 ${
+                errors.amount ? 'border-red-300' : 'border-ink-200'}`
+                } />
+
             </div>
-          )}
-
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            icon={<Plus className="h-4 w-4" />}
-            onClick={() => setRows((prev) => [...prev, emptyRow()])}>
-
-            Add item
-          </Button>
-
-          <div className="flex items-center justify-end gap-2 border-t border-ink-200 pt-3 text-sm">
-            <span className="text-ink-500">Total</span>
-            <span className="font-heading text-base font-semibold text-ink-950">
-              ₦{total.toLocaleString()}
-            </span>
+            {errors.amount ?
+            <p className="mt-1.5 text-xs text-red-600">{errors.amount}</p> :
+            numericAmount > 0 ?
+            <p className="mt-1.5 text-xs text-ink-500">
+                The client will be asked to pay ₦{numericAmount.toLocaleString('en-NG', { maximumFractionDigits: 2 })}.
+              </p> :
+            null}
           </div>
         </div>
         <ModalFooter>
@@ -137,7 +183,7 @@ export function AddProcurementModal({
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Add procurement'}
+            {submitting ? 'Uploading…' : 'Add procurement'}
           </Button>
         </ModalFooter>
       </form>

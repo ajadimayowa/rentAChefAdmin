@@ -79,6 +79,10 @@ export function useBookingPageState() {
     setProcurementRecords((prev) => [record, ...prev]);
   };
 
+  const handleProcurementDeleted = (procurementId: string) => {
+    setProcurementRecords((prev) => prev.filter((r) => r.id !== procurementId));
+  };
+
   const handlePaymentAdded = (result: AddBookingPaymentResult) => {
     setBooking((prev) =>
     prev ?
@@ -111,6 +115,7 @@ export function useBookingPageState() {
     handleChefAssigned,
     handleCommentAdded,
     handleProcurementCreated,
+    handleProcurementDeleted,
     handlePaymentAdded
   };
 }

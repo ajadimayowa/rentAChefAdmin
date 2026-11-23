@@ -1,6 +1,8 @@
 import {
-  Bell,
   CalendarCheck,
+  CreditCard,
+  Info,
+  ShoppingCart,
   CalendarPlus,
   LayoutDashboard,
   LogOut,
@@ -11,6 +13,27 @@ import {
 import React, { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { NotificationBell, type NotificationSource } from '../notifications/NotificationBell';
+import {
+  getMyNotificationUnreadCount,
+  listMyNotifications,
+  markAllMyNotificationsRead,
+  markMyNotificationRead } from
+'../../services/myNotificationServices';
+
+const notificationSource: NotificationSource = {
+  list: () => listMyNotifications(),
+  unreadCount: getMyNotificationUnreadCount,
+  markRead: markMyNotificationRead,
+  markAllRead: markAllMyNotificationsRead
+};
+
+const NOTIFICATION_ICONS: Record<string, React.ReactNode> = {
+  'procurement-update': <ShoppingCart className="h-4 w-4" />,
+  'booking-confirmation': <CalendarCheck className="h-4 w-4" />,
+  'payment-receipt': <CreditCard className="h-4 w-4" />,
+  'system-alert': <Info className="h-4 w-4" />
+};
 
 interface NavItem {
   to: string;
@@ -136,14 +159,14 @@ export function ClientLayout() {
             <p className="text-xs text-ink-400">Client</p>
             <p className="truncate font-heading text-sm font-semibold text-ink-950">{current}</p>
           </div>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative rounded-lg p-2 text-ink-600 hover:bg-ink-100">
-
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-buttons" />
-          </button>
+          {/* The client portal has no messages page yet, so only notifications feed this bell. */}
+          <NotificationBell
+            source={notificationSource}
+            unreadMessages={0}
+            messagesPath="/client"
+            messagesTitle={() => ''}
+            messagesHint=""
+            icons={NOTIFICATION_ICONS} />
         </header>
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

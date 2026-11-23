@@ -1,3 +1,4 @@
+import type { ProcurementRecord } from '../admin/procurementServices';
 import { api, type ApiItemResponse } from '../../config/api';
 
 export interface BookingPartyRef {
@@ -105,6 +106,8 @@ export interface BookingDetail {
   quotationId?: string;
   chefResponse?: ChefResponse;
   declinedChefs?: DeclinedChef[];
+  /** Procurement documents + amounts the admin raised, newest first. */
+  procurements?: ProcurementRecord[];
   date: string;
   guests: number | null;
   createdAt: string;

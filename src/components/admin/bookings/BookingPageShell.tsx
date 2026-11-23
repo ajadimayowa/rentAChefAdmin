@@ -75,6 +75,7 @@ export interface BookingPageShellProps {
   handleChefAssigned: (chef: AssignedChef, status: string) => void;
   handleCommentAdded: (comments: BookingDetail['comments']) => void;
   handleProcurementCreated: (record: ProcurementRecord) => void;
+  handleProcurementDeleted: (id: string) => void;
   handlePaymentAdded: (result: AddBookingPaymentResult) => void;
   theme?: WorkflowTheme;
   children?: React.ReactNode;
@@ -98,6 +99,7 @@ export function BookingPageShell({
   handleChefAssigned,
   handleCommentAdded,
   handleProcurementCreated,
+  handleProcurementDeleted,
   handlePaymentAdded,
   theme,
   children
@@ -215,7 +217,7 @@ export function BookingPageShell({
 
           {booking.paymentDetails && <PaymentDetailsCard details={booking.paymentDetails} />}
 
-          <ProcurementCard records={procurementRecords} loading={procurementLoading} />
+          <ProcurementCard records={procurementRecords} loading={procurementLoading} onDeleted={handleProcurementDeleted} />
 
           <CommentsCard comments={booking.comments} />
 
