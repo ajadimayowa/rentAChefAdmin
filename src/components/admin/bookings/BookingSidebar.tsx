@@ -2,8 +2,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChefHat, Mail, Phone, Receipt, UserRound } from 'lucide-react';
 import { Card, CardHeader } from '../../ui/Card';
+import { Badge } from '../../ui/Badge';
 import type { BookingDetail } from '../../../services/booking/bookingServices';
-import { convertToThousand } from '../../../utils/format';
+import { convertToThousand, formatDate } from '../../../utils/format';
+
+const CHEF_RESPONSE_BADGE = {
+  pending: { tone: 'warning', label: 'Awaiting chef’s response' },
+  accepted: { tone: 'success', label: 'Accepted by chef' },
+  declined: { tone: 'danger', label: 'Declined by chef' }
+} as const;
 
 function initials(name?: string): string {
   if (!name) return '?';
@@ -74,11 +81,38 @@ export function BookingSidebar({ booking }: {booking: BookingDetail;}) {
                   <Phone className="h-3.5 w-3.5 shrink-0 text-ink-400" /> {booking.chef.phoneNumber}
                 </div>
             }
+              {booking.chefResponse?.status ?
+            <div className="pt-1">
+                  <Badge tone={CHEF_RESPONSE_BADGE[booking.chefResponse.status].tone}>
+                    {CHEF_RESPONSE_BADGE[booking.chefResponse.status].label}
+                  </Badge>
+                </div> :
+            null}
             </div>
           </div> :
 
-        <p className="px-5 py-6 text-sm text-ink-500">No chef assigned yet.</p>
+        <p className="px-5 py-6 text-sm text-ink-500">
+            {booking.chefResponse?.status === 'declined' ?
+          'The assigned chef declined. Use “Reassign chef” to pick another.' :
+          'No chef assigned yet.'}
+          </p>
         }
+
+        {booking.declinedChefs && booking.declinedChefs.length > 0 ?
+        <div className="border-t border-ink-100 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-400">Declined by</p>
+            <ul className="mt-2 space-y-2.5">
+              {booking.declinedChefs.map((d, i) =>
+            <li key={`${d.chefId}-${i}`} className="text-sm">
+                  <p className="font-medium text-ink-800">
+                    {d.chefName || 'Chef'} <span className="text-xs font-normal text-ink-400">· {formatDate(d.declinedAt)}</span>
+                  </p>
+                  {d.reason ? <p className="text-xs text-ink-500">“{d.reason}”</p> : null}
+                </li>
+            )}
+            </ul>
+          </div> :
+        null}
       </Card>
 
       <Card>

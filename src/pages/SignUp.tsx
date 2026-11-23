@@ -1,11 +1,13 @@
 import { Field, Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import * as Yup from 'yup';
 import { Button } from '../components/ui/Button';
+import { PhoneField } from '../components/form/Fields';
+import { isValidNigerianPhone, toE164Nigerian } from '../utils/phone';
 import { ApiError } from '../config/api';
 import { registerClient } from '../services/auth';
 
@@ -30,7 +32,9 @@ const initialValues: SignUpValues = {
 const signUpSchema = Yup.object({
   fullName: Yup.string().trim().required('Full name is required'),
   email: Yup.string().email('Enter a valid email').required('Email is required'),
-  phoneNumber: Yup.string().required('Phone number is required'),
+  phoneNumber: Yup.string().required('Phone number is required').
+    matches(/^\d+$/, 'Numbers only').
+    test('ng-phone', 'Enter a valid Nigerian number, e.g. 08012345678', (v) => isValidNigerianPhone(v ?? '')),
   password: Yup.string().min(8, 'At least 8 characters').required('Password is required'),
   confirmPassword: Yup.string().
     oneOf([Yup.ref('password')], 'Passwords must match').
@@ -131,7 +135,7 @@ export function SignUp() {
                     email: values.email,
                     password: values.password,
                     fullName: values.fullName,
-                    phoneNumber: values.phoneNumber
+                    phoneNumber: toE164Nigerian(values.phoneNumber)
                   });
                   toast.success('Account created. Check your email for a verification code.');
                   navigate(`/verify-email?email=${encodeURIComponent(values.email)}`);
@@ -188,27 +192,7 @@ export function SignUp() {
                       null}
                   </div>
 
-                  <div>
-                    <label htmlFor="phoneNumber" className="mb-1.5 block text-sm font-medium text-ink-800">
-                      Phone number
-                    </label>
-                    <div className="relative">
-                      <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                      <Field
-                        id="phoneNumber"
-                        name="phoneNumber"
-                        type="tel"
-                        placeholder="+1 (555) 000-0000"
-                        className={`w-full rounded-lg border bg-white py-2 pl-10 pr-3 text-sm text-ink-900 placeholder:text-ink-400 transition-colors focus:outline-none focus:ring-2 ${touched.phoneNumber && errors.phoneNumber ?
-                            'border-red-300 focus:border-red-400 focus:ring-red-200' :
-                            'border-ink-200 focus:border-buttons focus:ring-buttons/25'}`
-                        } />
-
-                    </div>
-                    {touched.phoneNumber && errors.phoneNumber ?
-                      <p className="mt-1 text-xs font-medium text-red-600">{errors.phoneNumber}</p> :
-                      null}
-                  </div>
+                  <PhoneField name="phoneNumber" label="Phone number" placeholder="08012345678" />
 
                   <div>
                     <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-ink-800">

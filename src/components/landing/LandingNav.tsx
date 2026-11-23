@@ -6,7 +6,7 @@ const links = [
 { href: '#experiences', label: 'Experiences' },
 { href: '#how', label: 'How it works' },
 { href: '#chefs', label: 'Our chefs' },
-{ href: '#stories', label: 'Stories' }];
+{ href: '#lagos', label: 'Lagos life' }];
 
 
 export function LandingNav() {

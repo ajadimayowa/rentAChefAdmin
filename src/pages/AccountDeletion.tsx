@@ -4,7 +4,8 @@ import { Form, Formik, useField } from 'formik';
 import * as Yup from 'yup';
 import { CheckCircle2, Trash2, UserX } from 'lucide-react';
 import { LandingNav } from '../components/landing/LandingNav';
-import { TextAreaField, TextField } from '../components/form/Fields';
+import { PhoneField, TextAreaField, TextField } from '../components/form/Fields';
+import { isValidNigerianPhone, toE164Nigerian } from '../utils/phone';
 import { Button } from '../components/ui/Button';
 import { SUPPORT_EMAIL } from './PrivacyPolicy';
 
@@ -35,9 +36,9 @@ const requestTypes: {value: RequestType;label: string;description: string;icon: 
 const schema = Yup.object({
   email: Yup.string().trim().email('Enter a valid email address').required('Email is required'),
   phone: Yup.string().
-  trim().
-  matches(/^\+?[0-9\s-]{7,20}$/, 'Enter a valid phone number').
-  required('Phone number is required'),
+  required('Phone number is required').
+    matches(/^\d+$/, 'Numbers only').
+    test('ng-phone', 'Enter a valid Nigerian number, e.g. 08012345678', (v) => isValidNigerianPhone(v ?? '')),
   requestType: Yup.string().oneOf(['delete_account', 'delete_specific_data'], 'Select a request type').required('Select a request type'),
   details: Yup.string().
   trim().
@@ -96,7 +97,7 @@ function buildMailto(values: DeletionRequest) {
   const body = [
   `Request type: ${type?.label ?? ''}`,
   `Account email: ${values.email.trim()}`,
-  `Account phone: ${values.phone.trim()}`,
+  `Account phone: ${toE164Nigerian(values.phone)}`,
   '',
   'Details / additional information:',
   values.details.trim() || '(none)'].
@@ -196,11 +197,10 @@ export function AccountDeletion() {
                   type="email"
                   label="Email address associated with account"
                   placeholder="you@example.com" />
-                    <TextField
+                    <PhoneField
                   name="phone"
-                  type="tel"
                   label="Phone number associated with account"
-                  placeholder="+234 800 000 0000" />
+                  placeholder="08012345678" />
                   </div>
 
                   <RequestTypeField />

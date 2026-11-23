@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { HardHat } from 'lucide-react';
+import { HardHat, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
@@ -12,8 +12,9 @@ import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { RowActions } from '../../components/ui/RowActions';
-import { CheckboxField, TextAreaField, TextField } from '../../components/form/Fields';
+import { CheckboxField, ImageField, TextAreaField, TextField } from '../../components/form/Fields';
 import {
+  createChefLevel,
   deleteChefLevel,
   getChefLevel,
   listChefLevels,
@@ -26,15 +27,34 @@ const errorMessage = (err: unknown, fallback: string): string =>
 err instanceof ApiError ? err.message : fallback;
 
 const schema = Yup.object({
-  name: Yup.string().required('Name is required'),
+  name: Yup.string().trim().required('Name is required'),
   description: Yup.string()
 });
+
+// POST /category/create rejects a missing description, and every new level needs an icon.
+const createSchema = Yup.object({
+  name: Yup.string().trim().required('Name is required'),
+  description: Yup.string().trim().required('Description is required'),
+  icon: Yup.mixed<File>().required('Choose an icon for this level')
+});
+
+const emptyLevel: ChefLevelFormValues = {
+  id: '',
+  name: '',
+  description: '',
+  isActive: true,
+  icon: null,
+  currentIcon: undefined
+};
 
 interface ChefLevelFormValues {
   id: string;
   name: string;
   description: string;
   isActive: boolean;
+  icon: File | null;
+  /** URL of the icon already saved, shown as the preview while editing. */
+  currentIcon?: string;
 }
 
 export function ChefLevels() {
@@ -64,7 +84,9 @@ export function ChefLevels() {
         id: detail.id,
         name: detail.name,
         description: detail.description,
-        isActive: detail.isActive
+        isActive: detail.isActive,
+        icon: null,
+        currentIcon: detail.image || undefined
       });
     } catch (err) {
       toast.error(errorMessage(err, 'Could not load this chef level.'));
@@ -92,9 +114,13 @@ export function ChefLevels() {
     header: 'Chef level',
     render: (l) =>
     <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink-100 text-ink-400">
-            <HardHat className="h-4 w-4" />
-          </div>
+          {l.image ?
+      <img src={l.image} alt="" className="h-9 w-9 shrink-0 rounded-lg bg-ink-100 object-cover" /> :
+
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink-100 text-ink-400">
+              <HardHat className="h-4 w-4" />
+            </div>
+      }
           <p className="font-medium text-ink-950">{l.name}</p>
         </div>
 
@@ -117,7 +143,12 @@ export function ChefLevels() {
     <div>
       <PageHeader
         title="Chef Levels"
-        description="The tiers chefs are assigned to across the platform, used when creating chef profiles and setting tier pricing." />
+        description="The tiers chefs are assigned to across the platform, used when creating chef profiles and setting tier pricing."
+        action={
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyLevel)}>
+            New chef level
+          </Button>
+        } />
 
 
       <Card>
@@ -135,7 +166,7 @@ export function ChefLevels() {
           emptyDescription={
           loading ?
           'Fetching chef levels.' :
-          'Chef levels are managed as categories — create one from Service Categories.'
+          'Create one with the “New chef level” button.'
           } />
 
       </Card>
@@ -143,25 +174,35 @@ export function ChefLevels() {
       <Modal
         open={Boolean(editing)}
         onClose={() => setEditing(null)}
-        title="Edit chef level"
+        title={editing?.id ? 'Edit chef level' : 'New chef level'}
         description="Chef levels are stored as categories, shared with the Service Categories page."
         size="md">
 
         {editing ?
         <Formik
           initialValues={editing}
-          validationSchema={schema}
+          validationSchema={editing.id ? schema : createSchema}
           onSubmit={async (values, { setSubmitting }) => {
+            const input = {
+              name: values.name.trim(),
+              description: values.description.trim() || undefined,
+              isActive: values.isActive,
+              icon: values.icon
+            };
             try {
-              const updated = await updateChefLevel(values.id, {
-                name: values.name,
-                description: values.description || undefined,
-                isActive: values.isActive
-              });
-              setLevels((prev) =>
-              prev.map((l) => l.id === updated.id ? { id: updated.id, name: updated.name } : l)
-              );
-              toast.success('Chef level updated.');
+              if (values.id) {
+                const updated = await updateChefLevel(values.id, input);
+                setLevels((prev) =>
+                prev.map((l) =>
+                l.id === updated.id ? { id: updated.id, name: updated.name, image: updated.image } : l
+                )
+                );
+                toast.success('Chef level updated.');
+              } else {
+                const created = await createChefLevel(input);
+                setLevels((prev) => [{ id: created.id, name: created.name, image: created.image }, ...prev]);
+                toast.success(`${created.name} created.`);
+              }
               setEditing(null);
             } catch (err) {
               toast.error(errorMessage(err, 'Could not save this chef level.'));
@@ -173,6 +214,12 @@ export function ChefLevels() {
             {({ isSubmitting }) =>
           <Form>
                 <div className="space-y-4 px-6 py-5">
+                  <ImageField
+                name="icon"
+                label="Level icon"
+                hint={editing.id ? 'Choose a new image to replace the current icon.' : undefined}
+                previewUrl={editing.currentIcon} />
+
                   <TextField name="name" label="Level name" placeholder="Senior Chef" />
                   <TextAreaField
                 name="description"
@@ -195,7 +242,7 @@ export function ChefLevels() {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving…' : 'Save changes'}
+                    {isSubmitting ? 'Saving…' : editing.id ? 'Save changes' : 'Create chef level'}
                   </Button>
                 </ModalFooter>
               </Form>

@@ -54,3 +54,15 @@ h6 {
   background: rgba(28, 28, 31, 0.32);
   background-clip: content-box;
 }
+
+/* Landing page: the danfo ribbon scrolls; it holds still for reduced-motion users. */
+@keyframes landing-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.landing-marquee {
+  animation: landing-marquee 40s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-marquee { animation: none; }
+}

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Star } from 'lucide-react';
+import { AdireBackdrop, DANFO_YELLOW } from './lagosTheme';
 
 const chefs = [
 {
@@ -7,43 +6,36 @@ const chefs = [
   photo: '/featuredchefs/BasseyVeronica.jpg',
   tier: 'Executive Chef',
   city: 'Lagos Mainland',
-  cuisines: 'Continental · Local',
-  rating: 4.9,
-  jobs: 212
+  cuisines: 'Continental · Local'
 },
 {
   name: 'Funmilayo Omogboye',
   photo: '/featuredchefs/FunmilayoOmogboye.jpg',
   tier: 'Sous Chef',
   city: 'Lagos Island',
-  cuisines: 'Pan-African · Fusion',
-  rating: 4.8,
-  jobs: 164
+  cuisines: 'Pan-African · Fusion'
 },
 {
   name: 'Okanlawon Olumide',
   photo: '/featuredchefs/OkanlawonOlumide.jpg',
   tier: 'Junior Chef',
   city: 'Surulere',
-  cuisines: 'Continental',
-  rating: 4.9,
-  jobs: 187
+  cuisines: 'Continental'
 },
 {
   name: 'Ibrahim Taiwo',
   photo: '/featuredchefs/IbrahimTaiwo.jpg',
   tier: 'Junior Chef',
   city: 'Lagos Mainland',
-  cuisines: 'Local',
-  rating: 4.7,
-  jobs: 98
+  cuisines: 'Local'
 }];
 
 
 export function ChefsShowcase() {
   return (
-    <section id="chefs" className="bg-ink-950 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+    <section id="chefs" className="relative overflow-hidden bg-ink-900 py-20 sm:py-28">
+      <AdireBackdrop color={DANFO_YELLOW} opacity={0.04} />
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-buttons">
             The roster
@@ -52,8 +44,9 @@ export function ChefsShowcase() {
             Every chef is interviewed, tasted and background-checked
           </h2>
           <p className="mt-4 text-ink-300">
-            Chefs are tiered by experience and technique — Standard through Signature — so pricing
-            stays transparent whatever the occasion.
+            Lagos-based chefs who know their way around a pot of jollof and a plated continental
+            menu alike. Each is levelled by experience — from Junior to Executive — so pricing stays
+            transparent whatever the occasion.
           </p>
         </div>
 
@@ -73,10 +66,6 @@ export function ChefsShowcase() {
               <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                 <span className="rounded-full bg-buttons/15 px-2.5 py-0.5 text-xs font-medium text-buttons">
                   {chef.tier}
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs text-ink-300">
-                  <Star className="h-3.5 w-3.5 fill-buttons text-buttons" />
-                  {chef.rating} · {chef.jobs} jobs
                 </span>
               </div>
               <p className="mt-3 text-xs text-ink-500">{chef.city}</p>

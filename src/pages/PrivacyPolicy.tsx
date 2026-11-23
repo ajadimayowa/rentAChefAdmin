@@ -38,8 +38,8 @@ const sections: {id: string;title: string;body: React.ReactNode;}[] = [
         </li>
         <li>
           <strong className="font-medium text-ink-800">Payment information</strong> — billing
-          details and transaction records. Card payments are handled by our third-party payment
-          processors.
+          details and transaction records. Payments (card, bank transfer or USSD) are processed by
+          Paystack, our payment provider; we never see or store your full card details.
         </li>
         <li>
           <strong className="font-medium text-ink-800">Chef information</strong> — for chefs,

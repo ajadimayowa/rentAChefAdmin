@@ -171,7 +171,7 @@ export function BookingPageShell({
               </HeroAction>
             }
             <HeroAction icon={<ChefHat className="h-3.5 w-3.5" />} onClick={() => setAssignChefOpen(true)}>
-              Assign chef
+              {booking.chef || booking.chefResponse?.status === 'declined' ? 'Reassign chef' : 'Assign chef'}
             </HeroAction>
             <HeroAction icon={<ShoppingCart className="h-3.5 w-3.5" />} onClick={() => setAddProcurementOpen(true)}>
               Add procurement
@@ -247,6 +247,7 @@ export function BookingPageShell({
         onClose={() => setAssignChefOpen(false)}
         bookingId={booking.id}
         currentChefId={booking.chef?.id}
+        declinedChefIds={(booking.declinedChefs || []).map((d) => String(d.chefId))}
         onAssigned={handleChefAssigned} />
 
 

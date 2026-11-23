@@ -44,7 +44,7 @@ export function SiteFooter() {
             <span className="font-heading text-lg font-semibold text-ink-950">Rent a Chef</span>
           </Link>
           <p className="mt-4 text-sm leading-relaxed text-ink-500">
-            Vetted private chefs for dinners, events and weekly meal prep across 14 cities.
+            Vetted private chefs for dinners, events and weekly meal prep.
           </p>
         </div>
 

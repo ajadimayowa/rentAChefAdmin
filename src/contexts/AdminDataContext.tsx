@@ -11,8 +11,7 @@ import type {
   ChefCategoryPrice,
   Menu,
   Package,
-  Service,
-  ServiceCategory } from
+  Service } from
 '../types';
 import { groceryTotal, uid } from '../utils/format';
 
@@ -26,7 +25,6 @@ export interface BookingTotals {
 }
 
 interface AdminDataValue {
-  categories: ServiceCategory[];
   services: Service[];
   users: AppUser[];
   chefs: Chef[];
@@ -35,8 +33,6 @@ interface AdminDataValue {
   charges: Charge[];
   chefPrices: ChefCategoryPrice[];
   bookings: Booking[];
-  saveCategory: (value: ServiceCategory) => void;
-  removeCategory: (id: string) => void;
   saveService: (value: Service) => void;
   removeService: (id: string) => void;
   saveUser: (value: AppUser) => void;
@@ -61,7 +57,6 @@ interface AdminDataValue {
     userName: (id: string) => string;
     chefName: (id: string) => string;
     serviceName: (id: string) => string;
-    categoryName: (id: string) => string;
     menuName: (id: string | null) => string;
     packageName: (id: string | null) => string;
   };
@@ -75,7 +70,6 @@ function upsert<T extends {id: string;}>(list: T[], value: T): T[] {
 }
 
 export function AdminDataProvider({ children }: {children: React.ReactNode;}) {
-  const [categories, setCategories] = useState<ServiceCategory[]>(seed.serviceCategories);
   const [services, setServices] = useState<Service[]>(seed.services);
   const [users, setUsers] = useState<AppUser[]>(seed.users);
   const [chefs, setChefs] = useState<Chef[]>(seed.chefs);
@@ -134,16 +128,14 @@ export function AdminDataProvider({ children }: {children: React.ReactNode;}) {
       userName: (id: string) => users.find((u) => u.id === id)?.name ?? 'Unassigned',
       chefName: (id: string) => chefs.find((c) => c.id === id)?.name ?? 'Unassigned',
       serviceName: (id: string) => services.find((s) => s.id === id)?.name ?? '—',
-      categoryName: (id: string) => categories.find((c) => c.id === id)?.name ?? '—',
       menuName: (id: string | null) => id ? menus.find((m) => m.id === id)?.name ?? '—' : '—',
       packageName: (id: string | null) =>
       id ? packages.find((p) => p.id === id)?.name ?? '—' : '—'
     }),
-    [users, chefs, services, categories, menus, packages]
+    [users, chefs, services, menus, packages]
   );
 
   const value: AdminDataValue = {
-    categories,
     services,
     users,
     chefs,
@@ -152,11 +144,6 @@ export function AdminDataProvider({ children }: {children: React.ReactNode;}) {
     charges,
     chefPrices,
     bookings,
-    saveCategory: makeSaver(setCategories, categories, 'Category'),
-    removeCategory: (id) => {
-      setCategories((prev) => prev.filter((i) => i.id !== id));
-      toast.success('Category deleted');
-    },
     saveService: makeSaver(setServices, services, 'Service'),
     removeService: (id) => {
       setServices((prev) => prev.filter((i) => i.id !== id));

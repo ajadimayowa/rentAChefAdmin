@@ -64,7 +64,11 @@ export function useBookingPageState() {
   };
 
   const handleChefAssigned = (chef: AssignedChef, status: string) => {
-    setBooking((prev) => prev ? { ...prev, status, chef: { id: chef.id, fullName: chef.fullName } } : prev);
+    setBooking((prev) =>
+    prev ?
+    { ...prev, status, chef: { id: chef.id, fullName: chef.fullName }, chefResponse: { chefId: chef.id, status: 'pending' } } :
+    prev
+    );
   };
 
   const handleCommentAdded = (comments: BookingDetail['comments']) => {

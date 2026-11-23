@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FieldArray, Form, Formik } from 'formik';
 import * as Yup from 'yup';
 import { Plus, Trash2 } from 'lucide-react';
@@ -182,6 +182,86 @@ export function ChefTierPricing() {
     p.target.name.toLowerCase().includes(search.toLowerCase()))
   );
 
+  // ---- Price grid: one row per chef level, one column per priced service ----
+  // Only active rules are shown; columns are the services/special services that have
+  // at least one, so services with no pricing yet don't add empty columns.
+  const gridTargets = useMemo(() => {
+    const byKey = new Map<string, AdminServicePricing['target']>();
+    pricing.
+    filter((p) => p.isActive && p.target.id).
+    forEach((p) => byKey.set(`${p.target.type}:${p.target.id}`, p.target));
+    return [...byKey.entries()].
+    map(([key, target]) => ({ key, ...target })).
+    sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'service' ? -1 : 1);
+  }, [pricing]);
+
+  const gridRules = useMemo(() => {
+    const byCell = new Map<string, AdminServicePricing[]>();
+    pricing.
+    filter((p) => p.isActive).
+    forEach((p) => {
+      const cell = `${p.chefCategory.id}|${p.target.type}:${p.target.id}`;
+      byCell.set(cell, [...(byCell.get(cell) ?? []), p]);
+    });
+    return byCell;
+  }, [pricing]);
+
+  const gridColumns: Column<ChefCategoryOption>[] = [
+  {
+    key: 'level',
+    header: 'Chef level',
+    render: (c) => <Badge tone="brand">{c.name}</Badge>
+  },
+  ...gridTargets.map((t): Column<ChefCategoryOption> => ({
+    key: t.key,
+    header: t.type === 'service' ? t.name : `${t.name} (special)`,
+    align: 'right',
+    render: (c) => {
+      const rules = gridRules.get(`${c.id}|${t.key}`) ?? [];
+      if (!rules.length) {
+        return (
+          <button
+            type="button"
+            onClick={() =>
+            setEditing({
+              ...emptyForm,
+              chefCategoryId: c.id,
+              targetType: t.type,
+              serviceId: t.type === 'service' ? t.id : '',
+              specialServiceId: t.type === 'specialService' ? t.id : ''
+            })
+            }
+            className="text-xs text-ink-400 hover:text-buttons"
+            title={`Add a ${c.name} price for ${t.name}`}>
+
+              + Add
+            </button>);
+
+      }
+      return (
+        <div className="flex flex-col items-end gap-1">
+            {rules.map((r) =>
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => setEditing(toFormValues(r))}
+            className="whitespace-nowrap text-right hover:text-buttons"
+            title="Edit this pricing rule">
+
+                <span className="font-medium">{convertToThousand(r.basePrice)}</span>
+                {r.pricingType === 'daybased' ?
+            <span className="block text-[11px] text-ink-400">
+                    {r.numberOfDays} day{r.numberOfDays === 1 ? '' : 's'} · {convertToThousand(r.monthlySubFee ?? 0)}/mo
+                  </span> :
+            null}
+              </button>
+          )}
+          </div>);
+
+    }
+  }))];
+
+
   const columns: Column<AdminServicePricing>[] = [
   {
     key: 'chefCategory',
@@ -266,27 +346,30 @@ export function ChefTierPricing() {
         } />
 
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {chefCategories.map((c) => {
-          const rules = pricing.filter((p) => p.chefCategory.id === c.id && p.isActive);
-          const avg = rules.length ? rules.reduce((s, r) => s + r.basePrice, 0) / rules.length : 0;
-          return (
-            <Card key={c.id} className="p-5">
-              <Badge tone="brand">{c.name}</Badge>
-              <p className="mt-3 font-heading text-2xl font-semibold text-ink-950">
-                {avg ? convertToThousand(avg) : '—'}
-              </p>
-              <p className="mt-1 text-xs text-ink-400">
-                Average across {rules.length} active rule{rules.length === 1 ? '' : 's'}
-              </p>
-            </Card>);
+      <Card className="mb-6">
+        <CardHeader
+          title="Prices by chef level"
+          description="Active base price for each chef level on every priced service. Click a price to edit it, or + Add to fill a gap." />
 
-        })}
-      </div>
+        <DataTable
+          columns={gridColumns}
+          rows={chefCategories}
+          rowKey={(c) => c.id}
+          emptyTitle={loading ? 'Loading prices…' : 'No chef levels yet'}
+          emptyDescription={
+          loading ? 'Fetching the pricing matrix.' : 'Create chef levels on the Chef Levels page, then add pricing rules for them.'
+          } />
+
+        {!loading && chefCategories.length > 0 && gridTargets.length === 0 ?
+        <p className="border-t border-ink-200 px-5 py-4 text-sm text-ink-500">
+            No active pricing rules yet — use “New pricing rule” to add the first one.
+          </p> :
+        null}
+      </Card>
 
       <Card>
         <CardHeader
-          title="Pricing matrix"
+          title="All pricing rules"
           description="Each rule maps a chef category to a service (or special service) and its rate card" />
 
         <Toolbar search={search} onSearch={setSearch} placeholder="Search by category or target…">
@@ -352,9 +435,28 @@ export function ChefTierPricing() {
                 effectiveTo: values.effectiveTo || undefined,
                 isActive: values.isActive
               };
-              const saved = values.id ?
+              const res = values.id ?
               await updateAdminServicePricing(values.id, input) :
               await createAdminServicePricing(input);
+              // Fill any names the save response didn't include from the lists already
+              // loaded, so the row and the chef category cards update without a reload.
+              const targetName = res.target.type === 'service' ?
+              services.find((s) => s.id === res.target.id)?.name :
+              specialServices.find((s) => s.id === res.target.id)?.title;
+              const saved: AdminServicePricing = {
+                ...res,
+                chefCategory: {
+                  id: res.chefCategory.id || values.chefCategoryId,
+                  name:
+                  res.chefCategory.name !== '—' ?
+                  res.chefCategory.name :
+                  chefCategories.find((c) => c.id === values.chefCategoryId)?.name ?? '—'
+                },
+                target: {
+                  ...res.target,
+                  name: res.target.name !== '—' ? res.target.name : targetName ?? '—'
+                }
+              };
               setPricing((prev) => {
                 const exists = prev.some((p) => p.id === saved.id);
                 return exists ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev];

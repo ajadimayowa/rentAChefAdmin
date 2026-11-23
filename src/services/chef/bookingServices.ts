@@ -6,6 +6,8 @@ export interface ChefBookingListItem {
   customerName: string;
   serviceName: string;
   workflow?: string;
+  /** Whether the chef has accepted the assignment yet. */
+  chefResponseStatus?: 'pending' | 'accepted' | 'declined';
   status: string;
   paymentStatus: string;
   date: string;
@@ -45,4 +47,13 @@ function toChefBookingQueryString(params?: ChefBookingListParams): string {
 
 export function listChefBookings(params?: ChefBookingListParams): Promise<ChefBookingListResponse> {
   return api.get<ChefBookingListResponse>(`/chef/bookings${toChefBookingQueryString(params)}`);
+}
+
+/** The assigned chef accepts the booking, or declines it with a reason (admins are notified). */
+export function respondToBooking(
+id: string,
+action: 'accept' | 'decline',
+reason?: string)
+: Promise<{success: boolean;message: string;payload: {id: string;status: string;chefResponse: {status: string;};};}> {
+  return api.post(`/chef/bookings/${id}/respond`, { action, reason });
 }

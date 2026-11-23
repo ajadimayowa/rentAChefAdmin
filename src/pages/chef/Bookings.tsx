@@ -75,7 +75,12 @@ export function ChefBookings() {
   {
     key: 'status',
     header: 'Status',
-    render: (b) => <Badge tone={bookingStatusTone(b.status)}>{b.status}</Badge>
+    render: (b) =>
+    <div className="flex flex-wrap items-center gap-1.5">
+          <Badge tone={bookingStatusTone(b.status)}>{b.status}</Badge>
+          {b.chefResponseStatus === 'pending' ? <Badge tone="warning">Awaiting your response</Badge> : null}
+        </div>
+
   }];
 
 

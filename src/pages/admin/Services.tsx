@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Plus, ShoppingBag, UploadCloud, UtensilsCrossed } from 'lucide-react';
+import { ImageOff, Plus, ShoppingBag, UploadCloud, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
@@ -17,6 +17,7 @@ import {
   CheckboxField,
   FieldSectionTitle,
   FormGrid,
+  ImageField,
   MultiSelectField,
   SelectField,
   TextAreaField,
@@ -30,25 +31,16 @@ import {
   listWorkflows,
   updateService,
   type AdminService,
-  type ChefLevelCode,
   type ServiceCategoryOption,
-  type ServiceInput,
+  type ServiceFields,
   type WorkflowOption } from
 '../../services/admin/adminServices';
+import { listChefLevels, type ChefLevelSummary } from '../../services/admin/chefLevelServices';
 import { titleCase } from '../../utils/format';
 import { ApiError } from '../../config/api';
 
 const errorMessage = (err: unknown, fallback: string): string =>
 err instanceof ApiError ? err.message : fallback;
-
-const CHEF_LEVEL_OPTIONS: {value: ChefLevelCode;label: string;}[] = [
-{ value: 'junior', label: 'Junior' },
-{ value: 'senior', label: 'Senior' },
-{ value: 'sous', label: 'Sous' },
-{ value: 'head', label: 'Head' },
-{ value: 'pro', label: 'Pro' },
-{ value: 'executive', label: 'Executive' }];
-
 
 const schema = Yup.object({
   name: Yup.string().required('Service name is required'),
@@ -58,11 +50,39 @@ const schema = Yup.object({
   description: Yup.string()
 });
 
-const emptyService: ServiceInput & {id?: string;} = {
+// Every new service needs a picture; when editing, the existing one is kept unless replaced.
+const createSchema = schema.shape({
+  image: Yup.mixed<File>().required('Choose a picture for this service')
+});
+
+type ServiceFormValues = ServiceFields & {
+  id?: string;
+  image: File | null;
+  /** URL of the picture already saved, shown as the preview while editing. */
+  currentImage?: string;
+};
+
+const toFormValues = (s: AdminService): ServiceFormValues => ({
+  id: s.id,
+  name: s.name,
+  categoryId: s.categoryId,
+  description: s.description,
+  workflow: s.workflow,
+  bookingType: s.bookingType,
+  allowedChefLevels: s.allowedChefLevels,
+  supportsChefMenu: s.supportsChefMenu,
+  supportsCustomerMenuUpload: s.supportsCustomerMenuUpload,
+  supportsProcurement: s.supportsProcurement,
+  isActive: s.isActive,
+  image: null,
+  currentImage: s.image || undefined
+});
+
+const emptyService: ServiceFormValues = {
   name: '',
   categoryId: '',
   description: '',
-  icon: '',
+  image: null,
   workflow: '',
   bookingType: '',
   allowedChefLevels: [],
@@ -77,16 +97,22 @@ export function Services() {
   const [services, setServices] = useState<AdminService[]>([]);
   const [categories, setCategories] = useState<ServiceCategoryOption[]>([]);
   const [workflows, setWorkflows] = useState<WorkflowOption[]>([]);
+  const [chefLevels, setChefLevels] = useState<ChefLevelSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [editing, setEditing] = useState<(ServiceInput & {id?: string;}) | null>(null);
+  const [editing, setEditing] = useState<ServiceFormValues | null>(null);
   // Delete option disabled — see RowActions/ConfirmDialog below.
   // const [deleting, setDeleting] = useState<AdminService | null>(null);
 
   const categoryNamesById = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories]
+  );
+
+  const chefLevelNamesById = useMemo(
+    () => new Map(chefLevels.map((l) => [l.id, l.name])),
+    [chefLevels]
   );
 
   const loadServices = () => {
@@ -104,6 +130,9 @@ export function Services() {
     listWorkflows().
     then((res) => setWorkflows(res.payload)).
     catch(() => toast.error('Could not load workflows.'));
+    listChefLevels().
+    then(setChefLevels).
+    catch(() => toast.error('Could not load chef levels.'));
   }, []);
 
   useEffect(() => {
@@ -143,9 +172,18 @@ export function Services() {
     key: 'service',
     header: 'Service',
     render: (s) =>
-    <div>
-          <p className="font-medium text-ink-950">{s.name}</p>
-          <p className="max-w-sm truncate text-xs text-ink-500">{s.description || 'No description'}</p>
+    <div className="flex items-center gap-3">
+          {s.image ?
+      <img src={s.image} alt="" className="h-10 w-10 shrink-0 rounded-lg bg-ink-100 object-cover" /> :
+
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ink-100 text-ink-400">
+              <ImageOff className="h-4 w-4" />
+            </div>
+      }
+          <div className="min-w-0">
+            <p className="font-medium text-ink-950">{s.name}</p>
+            <p className="max-w-sm truncate text-xs text-ink-500">{s.description || 'No description'}</p>
+          </div>
         </div>
 
   },
@@ -171,7 +209,7 @@ export function Services() {
     s.allowedChefLevels.length ?
     <div className="flex flex-wrap gap-1">
             {s.allowedChefLevels.map((l) =>
-      <Badge key={l} tone="neutral">{titleCase(l)}</Badge>
+      <Badge key={l} tone="neutral">{chefLevelNamesById.get(l) ?? 'Inactive level'}</Badge>
       )}
           </div> :
 
@@ -212,7 +250,7 @@ export function Services() {
     render: (s) =>
     <RowActions
       onView={() => navigate(`/admin/services/${s.id}`)}
-      onEdit={() => setEditing({ ...s })}
+      onEdit={() => setEditing(toFormValues(s))}
       // onDelete={() => setDeleting(s)}
     />
 
@@ -224,12 +262,11 @@ export function Services() {
       <PageHeader
         title="Services"
         description="Define what customers can book, which workflow drives it and who can deliver it."
-        // action={
-        // <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyService)}>
-        //     New service
-        //   </Button>
-        // } 
-        />
+        action={
+        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setEditing(emptyService)}>
+            New service
+          </Button>
+        } />
 
 
       <Card>
@@ -268,13 +305,14 @@ export function Services() {
         {editing ?
         <Formik
           initialValues={editing}
-          validationSchema={schema}
+          validationSchema={editing.id ? schema : createSchema}
           onSubmit={async (values, { setSubmitting }) => {
             try {
               const res = values.id ?
               await updateService(values.id, values, categoryNamesById) :
-              await createService(values);
+              await createService(values, categoryNamesById);
               upsert(res.payload);
+              toast.success(values.id ? 'Service updated.' : `${res.payload.name} created.`);
               setEditing(null);
             } catch (err) {
               toast.error(errorMessage(err, 'Could not save service.'));
@@ -328,19 +366,27 @@ export function Services() {
 
                   </FormGrid>
 
-                  <TextField
-                name="icon"
-                label="Icon"
-                placeholder="🍽️ or icon name"
-                hint="Shown next to the service in the customer app." />
+                  <ImageField
+                name="image"
+                label="Service picture"
+                hint={
+                editing.id ?
+                'Shown on the service in the customer app. Choose a new image to replace it.' :
+                'Shown on the service in the customer app.'
+                }
+                previewUrl={editing.currentImage} />
 
 
                   <div className="border-t border-ink-200 pt-5">
                     <MultiSelectField
                   name="allowedChefLevels"
                   label="Eligible chef levels"
-                  hint="Leave empty to allow any chef level."
-                  options={CHEF_LEVEL_OPTIONS} />
+                  hint={
+                  chefLevels.length ?
+                  'Leave empty to allow any chef level.' :
+                  'No chef levels yet — create them on the Chef Levels page.'
+                  }
+                  options={chefLevels.map((l) => ({ value: l.id, label: l.name }))} />
 
                   </div>
 

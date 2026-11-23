@@ -52,6 +52,7 @@ import { HomeResidenceBookingPage } from './pages/admin/bookings/HomeResidenceBo
 import { GeneralBookingPage } from './pages/admin/bookings/GeneralBookingPage';
 import { Charges } from './pages/admin/Charges';
 import { ChefTierPricing } from './pages/admin/ChefTierPricing';
+import { Messages } from './pages/admin/Messages';
 import { TermsAndConditions } from './pages/admin/TermsAndConditions';
 import { ChefDashboard } from './pages/chef/Dashboard';
 import { ChefBookings } from './pages/chef/Bookings';
@@ -123,6 +124,7 @@ export function App() {
             <Route path="charges" element={<Charges />} />
             <Route path="chef-pricing" element={<ChefTierPricing />} />
             <Route path="terms" element={<TermsAndConditions />} />
+            <Route path="messages" element={<Messages />} />
           </Route>
 
           <Route

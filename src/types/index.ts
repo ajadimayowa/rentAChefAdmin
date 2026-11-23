@@ -9,16 +9,6 @@ export type BookingStatus =
 export type ChefTier = 'Standard' | 'Premium' | 'Executive' | 'Signature';
 export type AdminRole = 'admin' | 'super_admin';
 
-export interface ServiceCategory {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  icon: string;
-  status: Status;
-  createdAt: string;
-}
-
 export interface TermsSection {
   id: string;
   title: string;

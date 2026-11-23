@@ -27,8 +27,9 @@ const sections: { title: string; body: React.ReactNode }[] = [
   <>
       <p>The Client agrees to make full payment for the requested chef services before the scheduled date of service.</p>
       <p className="mt-2">
-        Payment shall be made by transfer to the Rental Company's designated account. The Rental
-        Company will provide payment details upon confirmation of the booking.
+        Payment is made securely online through Paystack, our payment provider, using a debit or
+        credit card, bank transfer or USSD. The Rental Company does not ask for payment into any
+        other account.
       </p>
     </>
 

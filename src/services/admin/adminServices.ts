@@ -376,27 +376,56 @@ input: AddBookingPaymentInput)
  * ============================================================
  */
 
-export type ChefLevelCode = 'sous' | 'executive' | 'junior' | 'senior' | 'pro' | 'head';
 export type ServiceBookingType = 'instant' | 'quotation';
 
-export interface ServiceInput {
+/** Fields shared by a saved service and the create/update payload. */
+export interface ServiceFields {
   name: string;
   categoryId: string;
   description: string;
-  icon: string;
   workflow: string;
   bookingType: ServiceBookingType | '';
-  allowedChefLevels: ChefLevelCode[];
+  /** Chef level (Category) ids allowed to deliver this service; empty = any level. */
+  allowedChefLevels: string[];
   supportsChefMenu: boolean;
   supportsCustomerMenuUpload: boolean;
   supportsProcurement: boolean;
   isActive: boolean;
 }
 
-export interface AdminService extends ServiceInput {
+export interface ServiceInput extends ServiceFields {
+  /** New picture to upload; leave empty to keep the current one. */
+  image?: File | null;
+}
+
+export interface AdminService extends ServiceFields {
   id: string;
+  /** Uploaded service picture URL. */
+  image: string;
+  /** Legacy icon-font name, no longer editable from the admin. */
+  icon: string;
   categoryName: string;
   createdAt: string;
+}
+
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
+
+// Sent as multipart so the picture can ride along (backend field: `image`). The chef
+// level list is JSON-encoded because an empty array can't be sent as repeated fields.
+function toServiceFormData(input: ServiceInput): FormData {
+  const form = new FormData();
+  form.append('name', input.name);
+  form.append('categoryId', input.categoryId);
+  form.append('description', input.description);
+  form.append('workflow', input.workflow);
+  form.append('bookingType', input.bookingType);
+  form.append('allowedChefLevels', JSON.stringify(input.allowedChefLevels));
+  form.append('supportsChefMenu', String(input.supportsChefMenu));
+  form.append('supportsCustomerMenuUpload', String(input.supportsCustomerMenuUpload));
+  form.append('supportsProcurement', String(input.supportsProcurement));
+  form.append('isActive', String(input.isActive));
+  if (input.image) form.append('image', input.image);
+  return form;
 }
 
 interface RawServiceCategoryRef {
@@ -405,10 +434,13 @@ interface RawServiceCategoryRef {
 }
 
 interface RawService {
-  id: string;
+  id?: string;
+  /** GET /service/:id returns a lean doc, so it carries _id instead of id. */
+  _id?: string;
   name: string;
   description?: string;
   icon?: string;
+  image?: string;
   workflow?: string;
   bookingType?: string;
   allowedChefLevels?: string[];
@@ -431,13 +463,15 @@ function mapService(raw: RawService, categoryNamesById?: Map<string, string>): A
   categoryNamesById?.get(categoryId) ?? '—';
 
   return {
-    id: raw.id,
+    id: raw.id ?? raw._id ?? '',
     name: raw.name ?? '',
     description: raw.description ?? '',
     icon: raw.icon ?? '',
+    image: raw.image ?? '',
     workflow: raw.workflow ?? '',
     bookingType: raw.bookingType === 'instant' || raw.bookingType === 'quotation' ? raw.bookingType : '',
-    allowedChefLevels: (raw.allowedChefLevels ?? []) as ChefLevelCode[],
+    // Older services stored level names ("senior"); only real chef-level ids are kept.
+    allowedChefLevels: (raw.allowedChefLevels ?? []).map(String).filter((l) => OBJECT_ID.test(l)),
     supportsChefMenu: raw.supportsChefMenu ?? false,
     supportsCustomerMenuUpload: raw.supportsCustomerMenuUpload ?? false,
     supportsProcurement: raw.supportsProcurement ?? true,
@@ -476,9 +510,12 @@ categoryNamesById?: Map<string, string>)
   };
 }
 
-export async function createService(input: ServiceInput): Promise<ApiItemResponse<AdminService>> {
-  const res = await api.post<{success: boolean;payload: RawService;}>('/service/create', input);
-  return { success: res.success, message: '', payload: mapService(res.payload) };
+export async function createService(
+input: ServiceInput,
+categoryNamesById?: Map<string, string>)
+: Promise<ApiItemResponse<AdminService>> {
+  const res = await api.post<{success: boolean;payload: RawService;}>('/service/create', toServiceFormData(input));
+  return { success: res.success, message: '', payload: mapService(res.payload, categoryNamesById) };
 }
 
 export async function updateService(
@@ -486,7 +523,7 @@ id: string,
 input: ServiceInput,
 categoryNamesById?: Map<string, string>)
 : Promise<ApiItemResponse<AdminService>> {
-  const res = await api.put<{success: boolean;payload: RawService;}>(`/service/${id}`, input);
+  const res = await api.put<{success: boolean;payload: RawService;}>(`/service/${id}`, toServiceFormData(input));
   return { success: res.success, message: '', payload: mapService(res.payload, categoryNamesById) };
 }
 
@@ -504,6 +541,81 @@ export async function listServiceCategories(): Promise<ApiListResponse<ServiceCa
     '/service-category/categories?limit=200'
   );
   return { success: res.success, message: '', payload: res.payload.map((c) => ({ id: c.id, name: c.name })) };
+}
+
+interface RawServiceCategory {
+  id: string;
+  name: string;
+  description?: string;
+  slug?: string;
+  image?: string;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface AdminServiceCategory {
+  id: string;
+  name: string;
+  description: string;
+  slug: string;
+  image: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ServiceCategoryInput {
+  name: string;
+  description: string;
+  isActive: boolean;
+  /** New picture to upload; leave empty to keep the current one. */
+  image?: File | null;
+}
+
+// Sent as multipart so the picture can ride along (backend field: `image`).
+function toServiceCategoryFormData(input: ServiceCategoryInput): FormData {
+  const form = new FormData();
+  form.append('name', input.name);
+  form.append('description', input.description);
+  form.append('isActive', String(input.isActive));
+  if (input.image) form.append('image', input.image);
+  return form;
+}
+
+function mapServiceCategory(raw: RawServiceCategory): AdminServiceCategory {
+  return {
+    id: raw.id,
+    name: raw.name ?? '',
+    description: raw.description ?? '',
+    slug: raw.slug ?? '',
+    image: raw.image ?? '',
+    isActive: raw.isActive ?? true,
+    createdAt: raw.createdAt ?? ''
+  };
+}
+
+/** Full category records for the Service Categories page (the backend pages at 20 by default). */
+export async function listServiceCategoriesFull(): Promise<AdminServiceCategory[]> {
+  const res = await api.get<{success: boolean;payload: RawServiceCategory[];}>(
+    '/service-category/categories?limit=200'
+  );
+  return res.payload.map(mapServiceCategory);
+}
+
+export async function createServiceCategory(input: ServiceCategoryInput): Promise<AdminServiceCategory> {
+  const res = await api.post<{success: boolean;payload: RawServiceCategory;}>('/service-category/create', toServiceCategoryFormData(input));
+  return mapServiceCategory(res.payload);
+}
+
+export async function updateServiceCategory(
+id: string,
+input: ServiceCategoryInput)
+: Promise<AdminServiceCategory> {
+  const res = await api.put<{success: boolean;payload: RawServiceCategory;}>(`/service-category/${id}`, toServiceCategoryFormData(input));
+  return mapServiceCategory(res.payload);
+}
+
+export function deleteServiceCategory(id: string): Promise<ApiMessageResponse> {
+  return api.delete<ApiMessageResponse>(`/service-category/${id}`);
 }
 
 export interface WorkflowOption {

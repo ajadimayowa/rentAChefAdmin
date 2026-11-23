@@ -1,5 +1,3 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { SiteFooter } from './SiteFooter';
 
@@ -16,8 +14,9 @@ export function CtaFooter() {
                   <span className="block text-buttons">Bring the chef.</span>
                 </h2>
                 <p className="mt-4 max-w-md text-ink-300">
-                  Tell us the date and the number of seats. We’ll come back with matched chefs,
-                  menus and a fully itemised quote within 24 hours.
+                  Tonight in Lekki or next month’s owambe in Ikeja — tell us the date and the number
+                  of guests. We’ll come back with matched chefs, menus and a fully itemised quote
+                  within 24 hours.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <a
@@ -27,18 +26,12 @@ export function CtaFooter() {
                     Request a quote
                     <ArrowRight className="h-4 w-4" />
                   </a>
-                  <Link
-                    to="/admin"
-                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3.5 text-[15px] font-medium text-white transition-colors hover:bg-white/5">
-                    
-                    Open admin portal
-                  </Link>
                 </div>
               </div>
               <div className="overflow-hidden rounded-2xl">
                 <img
-                  src="/cff85ab8-ce2d-44fe-8ded-7caa8e6f2ccf.jpg"
-                  alt="Guests dining at a candlelit table with plated courses"
+                  src="/lagos/lekki-bridge-night.jpg"
+                  alt="The Lekki–Ikoyi Link Bridge lit up at night over the lagoon"
                   className="h-full w-full object-cover" />
                 
               </div>

@@ -18,6 +18,7 @@ import {
   ImageField,
   MultiSelectSearchField,
   NumberField,
+  PhoneField,
   SearchSelectField,
   SelectField,
   TagsField,
@@ -28,6 +29,7 @@ import {
 } from
   '../../components/form/Fields';
 import { formatDate, titleCase } from '../../utils/format';
+import { isValidNigerianPhone, toE164Nigerian, toPhoneInput } from '../../utils/phone';
 import type { ApprovalStatus, Chef } from '../../types';
 import { ApiError } from '../../config/api';
 import {
@@ -46,7 +48,10 @@ import { getStateLgas, getStates } from '../../services/utility';
 const schema = Yup.object({
   name: Yup.string().required('Chef name is required'),
   email: Yup.string().email('Enter a valid email').required('Email is required'),
-  phone: Yup.string().required('Phone number is required'),
+  phone: Yup.string().
+    required('Phone number is required').
+    matches(/^\d+$/, 'Numbers only').
+    test('ng-phone', 'Enter a valid Nigerian number, e.g. 8166064166', (v) => isValidNigerianPhone(v ?? '')),
   state: Yup.object({
     stateId: Yup.string().required('Select a state'),
     stateName: Yup.string()
@@ -98,6 +103,17 @@ const emptyChef: ChefFormValues = {
   joinedAt: new Date().toISOString().slice(0, 10)
 };
 
+// Every field is pre-filled from the saved chef. The photo stays as-is (shown as the
+// preview) unless the admin picks a new file, since avatarFile starts empty.
+const toFormValues = (chef: Chef): ChefFormValues => ({
+  ...chef,
+  phone: toPhoneInput(chef.phone),
+  state: { stateId: chef.state?.stateId ?? '', stateName: chef.state?.stateName ?? '' },
+  specialties: [...chef.specialties],
+  servicesOffered: [...chef.servicesOffered],
+  avatarFile: null
+});
+
 const errorMessage = (err: unknown, fallback: string): string =>
   err instanceof ApiError ? err.message : fallback;
 
@@ -111,7 +127,7 @@ function toChefInput(values: ChefFormValues): ChefInput {
   return {
     name: values.name,
     email: values.email,
-    phone: values.phone,
+    phone: toE164Nigerian(values.phone),
     state: values.state,
     city: values.city,
     chefLevel: values.chefLevel,
@@ -310,7 +326,7 @@ export function Chefs() {
       render: (c) =>
         <RowActions
           onView={() => navigate(`/admin/chefs/${c.id}`)}
-          onEdit={() => setEditing({ ...c, avatarFile: null })}
+          onEdit={() => setEditing(toFormValues(c))}
           onDelete={() => setDeleting(c)}
           extra={
             c.status === 'pending' ?
@@ -475,7 +491,11 @@ export function Chefs() {
                   <ImageField
                     name="avatarFile"
                     label="Chef photo"
-                    hint="JPG or PNG, square works best."
+                    hint={
+                      editing.id ?
+                        'The current photo is kept unless you choose a new one.' :
+                        'Required. JPG or PNG, square works best.'
+                    }
                     previewUrl={editing.avatar || undefined} />
 
                   <FormGrid>
@@ -483,7 +503,7 @@ export function Chefs() {
                     <TextField name="email" label="Email" type="email" placeholder="chef@email.com" />
                   </FormGrid>
                   <FormGrid>
-                    <TextField name="phone" label="Phone" placeholder="+1 415 000 0000" />
+                    <PhoneField name="phone" label="Phone" placeholder="8166064166" />
                     <SearchSelectField
                       id="state"
                       name="state.stateId"
