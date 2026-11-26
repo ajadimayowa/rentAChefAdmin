@@ -41,6 +41,7 @@ const TARGET_TYPE_TONES: Record<TermsTargetType, BadgeTone> = {
 };
 
 const schema = Yup.object({
+  title: Yup.string().trim().required('Add a title').max(120, 'Keep it under 120 characters'),
   description: Yup.string().required('Clause text is required').min(10, 'Add a bit more detail'),
   termsUrl: Yup.string().url('Enter a valid URL'),
   targetType: Yup.string().oneOf(['service', 'category', 'specialMenu']).required('Select what this clause applies to'),
@@ -49,6 +50,7 @@ const schema = Yup.object({
 
 interface TermsFormValues {
   id?: string;
+  title: string;
   description: string;
   termsUrl: string;
   targetType: TermsTargetType | '';
@@ -56,6 +58,7 @@ interface TermsFormValues {
 }
 
 const emptyTerm: TermsFormValues = {
+  title: '',
   description: '',
   termsUrl: '',
   targetType: '',
@@ -106,6 +109,7 @@ export function TermsAndConditions() {
     terms.filter(
       (t) =>
       (typeFilter === 'all' || t.targetType === typeFilter) && (
+      t.title.toLowerCase().includes(search.toLowerCase()) ||
       t.description.toLowerCase().includes(search.toLowerCase()) ||
       t.targetName.toLowerCase().includes(search.toLowerCase()))
     ),
@@ -134,8 +138,11 @@ export function TermsAndConditions() {
     key: 'clause',
     header: 'Clause',
     render: (t) =>
-    <div>
-          <p className="max-w-md text-sm leading-relaxed text-ink-700">{t.description}</p>
+    <div className="max-w-md">
+          {t.title ?
+      <p className="text-sm font-semibold text-ink-950">{t.title}</p> :
+      <p className="text-xs font-medium text-amber-600">No title — edit to add one</p>}
+          <p className="mt-0.5 text-sm leading-relaxed text-ink-700">{t.description}</p>
           {t.termsUrl ?
       <a
         href={t.termsUrl}
@@ -176,6 +183,7 @@ export function TermsAndConditions() {
         onClick={() =>
         setEditing({
           id: t.id,
+          title: t.title,
           description: t.description,
           termsUrl: t.termsUrl ?? '',
           targetType: t.targetType ?? '',
@@ -257,6 +265,7 @@ export function TermsAndConditions() {
           onSubmit={async (values, { setSubmitting }) => {
             try {
               const input = {
+                title: values.title.trim(),
                 description: values.description,
                 termsUrl: values.termsUrl || undefined,
                 serviceId: values.targetType === 'service' ? values.targetId : null,
@@ -318,9 +327,14 @@ export function TermsAndConditions() {
 
               null}
 
+                  <TextField
+                name="title"
+                label="Title"
+                placeholder="e.g. Cancellation policy" />
+
                   <TextAreaField
                 name="description"
-                label="Clause text"
+                label="Description"
                 rows={5}
                 placeholder="Describe the condition in plain language." />
 
@@ -328,7 +342,7 @@ export function TermsAndConditions() {
                   <TextField
                 name="termsUrl"
                 type="url"
-                label="Read more URL (optional)"
+                label="URL (optional)"
                 placeholder="https://example.com/full-terms" />
 
                 </div>

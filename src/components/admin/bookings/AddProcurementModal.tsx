@@ -26,15 +26,30 @@ const sanitizeAmount = (value: string): string => {
 const formatSize = (bytes: number) =>
 bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-export function AddProcurementModal({
+export interface BookingDocumentCopy {
+  title: string;
+  description: string;
+  /** e.g. "Procurement PDF" */
+  fileLabel: string;
+  /** e.g. "Total amount" */
+  amountLabel: string;
+  submitLabel: string;
+  missingFileMessage: string;
+  successMessage: string;
+  failureMessage: string;
+}
+
+/** Upload a PDF plus the amount the client pays — used for procurement and invoices. */
+export function AddBookingDocumentModal({
   open,
   onClose,
-  bookingId,
-  onCreated
+  copy,
+  onSubmit
 
 
 
-}: {open: boolean;onClose: () => void;bookingId: string;onCreated: (record: ProcurementRecord) => void;}) {
+
+}: {open: boolean;onClose: () => void;copy: BookingDocumentCopy;onSubmit: (file: File, amount: string) => Promise<void>;}) {
   const [file, setFile] = useState<File | null>(null);
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -68,19 +83,18 @@ export function AddProcurementModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const nextErrors: typeof errors = {};
-    if (!file) nextErrors.file = 'Upload the procurement PDF.';
+    if (!file) nextErrors.file = copy.missingFileMessage;
     if (!amount || !(numericAmount > 0)) nextErrors.amount = 'Enter the total amount.';
     setErrors(nextErrors);
     if (!file || nextErrors.amount) return;
 
     setSubmitting(true);
     try {
-      const res = await createBookingProcurement(bookingId, file, amount);
-      onCreated(res.payload);
-      toast.success('Procurement added — the client has been notified.');
+      await onSubmit(file, amount);
+      toast.success(copy.successMessage);
       close();
     } catch (err) {
-      toast.error(errorMessage(err, 'Could not add procurement.'));
+      toast.error(errorMessage(err, copy.failureMessage));
     } finally {
       setSubmitting(false);
     }
@@ -90,14 +104,14 @@ export function AddProcurementModal({
     <Modal
       open={open}
       onClose={close}
-      title="Add procurement"
-      description="Upload the procurement PDF and the total the client should pay. The client is notified to view it and make payment."
+      title={copy.title}
+      description={copy.description}
       size="md">
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="space-y-5 p-6">
           <div>
-            <p className="mb-1.5 text-sm font-medium text-ink-800">Procurement PDF</p>
+            <p className="mb-1.5 text-sm font-medium text-ink-800">{copy.fileLabel}</p>
             <input
               ref={inputRef}
               type="file"
@@ -148,13 +162,13 @@ export function AddProcurementModal({
           </div>
 
           <div>
-            <label htmlFor="procurement-total" className="mb-1.5 block text-sm font-medium text-ink-800">
-              Total amount
+            <label htmlFor="document-amount" className="mb-1.5 block text-sm font-medium text-ink-800">
+              {copy.amountLabel}
             </label>
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400">₦</span>
               <input
-                id="procurement-total"
+                id="document-amount"
                 type="text"
                 inputMode="decimal"
                 autoComplete="off"
@@ -183,10 +197,41 @@ export function AddProcurementModal({
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Uploading…' : 'Add procurement'}
+            {submitting ? 'Uploading…' : copy.submitLabel}
           </Button>
         </ModalFooter>
       </form>
     </Modal>);
+
+}
+
+export function AddProcurementModal({
+  open,
+  onClose,
+  bookingId,
+  onCreated
+
+
+
+}: {open: boolean;onClose: () => void;bookingId: string;onCreated: (record: ProcurementRecord) => void;}) {
+  return (
+    <AddBookingDocumentModal
+      open={open}
+      onClose={onClose}
+      copy={{
+        title: 'Add procurement',
+        description: 'Upload the procurement PDF and the total the client should pay. The client is notified to view it and make payment.',
+        fileLabel: 'Procurement PDF',
+        amountLabel: 'Total amount',
+        submitLabel: 'Add procurement',
+        missingFileMessage: 'Upload the procurement PDF.',
+        successMessage: 'Procurement added — the client has been notified.',
+        failureMessage: 'Could not add procurement.'
+      }}
+      onSubmit={async (file, amount) => {
+        const res = await createBookingProcurement(bookingId, file, amount);
+        onCreated(res.payload);
+      }} />);
+
 
 }

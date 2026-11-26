@@ -1,7 +1,7 @@
 import { api } from '../../config/api';
 
 export type ChefMenuType = 'breakfast' | 'lunch' | 'dinner';
-export type ChefMenuClass = 'nigerian' | 'continental';
+export type ChefMenuClass = 'nigerian' | 'continental' | 'intercontinental';
 export type ChefMenuPricingModel = 'perhead' | 'plater';
 
 export interface ChefMenuGroceryInput {

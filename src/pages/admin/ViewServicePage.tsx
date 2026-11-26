@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'sonner';
@@ -41,11 +41,13 @@ const errorMessage = (err: unknown, fallback: string): string =>
 err instanceof ApiError ? err.message : fallback;
 
 const termSchema = Yup.object({
+  title: Yup.string().trim().required('Add a title').max(120, 'Keep it under 120 characters'),
   description: Yup.string().required('Add the clause text').max(1000, 'Keep it under 1000 characters'),
   termsUrl: Yup.string().url('Enter a valid URL').max(500, 'Keep it under 500 characters')
 });
 
 export function ViewServicePage() {
+  const navigate = useNavigate();
   const { id } = useParams<{id: string;}>();
   const [service, setService] = useState<AdminService | null>(null);
   const [chefLevelNamesById, setChefLevelNamesById] = useState<Map<string, string>>(new Map());
@@ -125,9 +127,16 @@ export function ViewServicePage() {
         title={service.name}
         description={service.description || 'No description added yet.'}
         action={
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             <Badge tone="neutral">{service.categoryName}</Badge>
             <Badge tone={service.isActive ? 'success' : 'neutral'}>{service.isActive ? 'Active' : 'Inactive'}</Badge>
+            <Button
+            variant="secondary"
+            icon={<Pencil className="h-4 w-4" />}
+            onClick={() => navigate(`/admin/services?edit=${service.id}`)}>
+
+              Edit service
+            </Button>
           </div>
         } />
 
@@ -206,7 +215,10 @@ export function ViewServicePage() {
                 {terms.map((term) =>
               <li key={term.id} className="flex items-start justify-between gap-3 px-5 py-3.5">
                     <div className="min-w-0">
-                      <p className="text-sm leading-relaxed text-ink-700">{term.description}</p>
+                      {term.title ?
+                  <p className="text-sm font-semibold text-ink-950">{term.title}</p> :
+                  <p className="text-xs font-medium text-amber-600">No title — edit to add one</p>}
+                      <p className="mt-0.5 text-sm leading-relaxed text-ink-700">{term.description}</p>
                       {term.termsUrl ?
                   <a
                     href={term.termsUrl}
@@ -250,7 +262,7 @@ export function ViewServicePage() {
               {service.image ?
               <img src={service.image} alt={service.name} className="w-full rounded-lg object-cover" /> :
 
-              <p className="py-6 text-center text-sm text-ink-500">No picture yet — add one from Edit on the Services page.</p>
+              <p className="py-6 text-center text-sm text-ink-500">No picture yet — add one with Edit service above.</p>
               }
             </div>
           </Card>
@@ -267,6 +279,7 @@ export function ViewServicePage() {
         {editingTerm ?
         <Formik
           initialValues={{
+            title: editingTerm === 'new' ? '' : editingTerm.title,
             description: editingTerm === 'new' ? '' : editingTerm.description,
             termsUrl: editingTerm === 'new' ? '' : editingTerm.termsUrl ?? ''
           }}
@@ -274,11 +287,11 @@ export function ViewServicePage() {
           onSubmit={async (values, { setSubmitting }) => {
             try {
               if (editingTerm === 'new') {
-                const res = await createServiceTerm(id, values.description, values.termsUrl);
+                const res = await createServiceTerm(id, { ...values, title: values.title.trim() });
                 setTerms((prev) => [res.payload, ...prev]);
                 toast.success('Clause added.');
               } else {
-                const res = await updateServiceTerm(editingTerm.id, values.description, values.termsUrl);
+                const res = await updateServiceTerm(editingTerm.id, { ...values, title: values.title.trim() });
                 setTerms((prev) => prev.map((t) => t.id === res.payload.id ? res.payload : t));
                 toast.success('Clause updated.');
               }
@@ -293,16 +306,21 @@ export function ViewServicePage() {
             {({ isSubmitting }) =>
           <Form>
                 <div className="space-y-4 px-6 py-5">
+                  <TextField
+                name="title"
+                label="Title"
+                placeholder="e.g. Cancellation policy" />
+
                   <TextAreaField
                 name="description"
-                label="Clause text"
+                label="Description"
                 rows={5}
                 placeholder="Describe the condition in plain language." />
 
                   <TextField
                 name="termsUrl"
                 type="url"
-                label="Read more URL (optional)"
+                label="URL (optional)"
                 placeholder="https://example.com/full-terms" />
 
                 </div>

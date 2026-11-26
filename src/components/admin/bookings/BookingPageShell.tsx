@@ -6,6 +6,7 @@ import {
   ChefHat,
   Clock,
   CreditCard,
+  FileText,
   Landmark,
   Loader2,
   MessageSquarePlus,
@@ -20,6 +21,8 @@ import { ProcurementCard } from './ProcurementCard';
 import { PaymentDetailsCard } from './PaymentDetailsCard';
 import { AssignChefModal } from './AssignChefModal';
 import { AddProcurementModal } from './AddProcurementModal';
+import { AddInvoiceModal, InvoiceCard } from './InvoiceCard';
+import type { InvoiceRecord } from '../../../services/admin/invoiceServices';
 import { AddCommentModal } from './AddCommentModal';
 import { AddPaymentModal } from './AddPaymentModal';
 import type { BookingDetail } from '../../../services/booking/bookingServices';
@@ -67,6 +70,10 @@ export interface BookingPageShellProps {
   setAssignChefOpen: (v: boolean) => void;
   addProcurementOpen: boolean;
   setAddProcurementOpen: (v: boolean) => void;
+  addInvoiceOpen: boolean;
+  setAddInvoiceOpen: (v: boolean) => void;
+  handleInvoiceCreated: (record: InvoiceRecord) => void;
+  handleInvoiceDeleted: (id: string) => void;
   addCommentOpen: boolean;
   setAddCommentOpen: (v: boolean) => void;
   addPaymentOpen: boolean;
@@ -91,6 +98,10 @@ export function BookingPageShell({
   setAssignChefOpen,
   addProcurementOpen,
   setAddProcurementOpen,
+  addInvoiceOpen,
+  setAddInvoiceOpen,
+  handleInvoiceCreated,
+  handleInvoiceDeleted,
   addCommentOpen,
   setAddCommentOpen,
   addPaymentOpen,
@@ -125,6 +136,10 @@ export function BookingPageShell({
   }
 
   const Icon = theme?.icon;
+
+
+  // Quotation services are priced after review, so their invoice leads the page.
+  const isQuotation = String(booking.bookingType ?? '').toUpperCase() === 'QUOTATION';
 
   return (
     <div>
@@ -175,6 +190,9 @@ export function BookingPageShell({
             <HeroAction icon={<ChefHat className="h-3.5 w-3.5" />} onClick={() => setAssignChefOpen(true)}>
               {booking.chef || booking.chefResponse?.status === 'declined' ? 'Reassign chef' : 'Assign chef'}
             </HeroAction>
+            <HeroAction icon={<FileText className="h-3.5 w-3.5" />} onClick={() => setAddInvoiceOpen(true)}>
+              Add invoice
+            </HeroAction>
             <HeroAction icon={<ShoppingCart className="h-3.5 w-3.5" />} onClick={() => setAddProcurementOpen(true)}>
               Add procurement
             </HeroAction>
@@ -217,7 +235,12 @@ export function BookingPageShell({
 
           {booking.paymentDetails && <PaymentDetailsCard details={booking.paymentDetails} />}
 
+          {/* Quotation bookings are priced by invoice, so it comes first there. */}
+          {isQuotation ? <InvoiceCard records={booking.invoices ?? []} onDeleted={handleInvoiceDeleted} isQuotation /> : null}
+
           <ProcurementCard records={procurementRecords} loading={procurementLoading} onDeleted={handleProcurementDeleted} />
+
+          {!isQuotation ? <InvoiceCard records={booking.invoices ?? []} onDeleted={handleInvoiceDeleted} /> : null}
 
           <CommentsCard comments={booking.comments} />
 
@@ -252,6 +275,12 @@ export function BookingPageShell({
         declinedChefIds={(booking.declinedChefs || []).map((d) => String(d.chefId))}
         onAssigned={handleChefAssigned} />
 
+
+      <AddInvoiceModal
+        open={addInvoiceOpen}
+        onClose={() => setAddInvoiceOpen(false)}
+        bookingId={booking.id}
+        onCreated={handleInvoiceCreated} />
 
       <AddProcurementModal
         open={addProcurementOpen}

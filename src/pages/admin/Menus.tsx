@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { FieldArray, Form, Formik } from 'formik';
 import * as Yup from 'yup';
-import { Plus, Trash2 } from 'lucide-react';
+import { FolderPlus, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card, CardHeader } from '../../components/ui/Card';
 import { Toolbar, FilterSelect } from '../../components/ui/Toolbar';
 import { DataTable, type Column } from '../../components/ui/DataTable';
+import { RowActions } from '../../components/ui/RowActions';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
@@ -26,16 +27,23 @@ import {
   addMenuGrocery,
   attachMenuToPackage,
   createMenuCore,
+  createMenuTypeOption,
+  updateMenuCore,
   getAdminMenu,
   listAdminMenus,
   listMenuTypeOptions,
   listPackageOptions,
+  MENU_ATTRIBUTE_SUGGESTIONS,
+  MENU_KIND_OPTIONS,
   type AdminMenu,
+  type MenuKind,
   type MenuCreatorType,
   type MenuTimeSlot,
   type MenuTypeOption,
   type PackageOption } from
 '../../services/admin/menuServices';
+import { ServiceCheckboxes } from '../../components/form/ServiceCheckboxes';
+import { MenuAttributesField } from '../../components/admin/menus/MenuAttributesField';
 import { listChefs, listServices, type AdminService } from '../../services/admin/adminServices';
 import type { Chef } from '../../types';
 import { convertToThousand, formatDate, titleCase } from '../../utils/format';
@@ -54,10 +62,12 @@ interface MenuFormValues {
   menuCreatorType: MenuCreatorType;
   title: string;
   description: string;
-  relatedServiceId: string;
+  serviceIds: string[];
   menuType: MenuTimeSlot | '';
   menuClass: string;
   pricingModel: string;
+  menuKind: MenuKind | '';
+  attributes: string[];
   menuCategory: string[];
   pricePerHead: number | '';
   chefId: string;
@@ -71,10 +81,12 @@ const emptyMenuForm: MenuFormValues = {
   menuCreatorType: 'organization',
   title: '',
   description: '',
-  relatedServiceId: '',
+  serviceIds: [],
   menuType: '',
   menuClass: '',
   pricingModel: '',
+  menuKind: '',
+  attributes: [],
   menuCategory: [],
   pricePerHead: '',
   chefId: '',
@@ -88,9 +100,18 @@ const schema = Yup.object({
   menuCreatorType: Yup.string().oneOf(['chef', 'organization']).required(),
   title: Yup.string().required('Menu title is required'),
   description: Yup.string().required('Description is required'),
-  relatedServiceId: Yup.string().required('Select the service this menu belongs to'),
+  serviceIds: Yup.array().of(Yup.string()).min(1, 'Select at least one service'),
   menuType: Yup.string().oneOf(['breakfast', 'lunch', 'dinner']).required('Select a menu type'),
-  pricePerHead: Yup.number().typeError('Enter a number').required('Price per head is required').min(0),
+  pricePerHead: Yup.number().
+  typeError('Enter a number').
+  min(0, 'Must be zero or more').
+  when('pricingModel', {
+    is: 'plater',
+    then: (s) => s.required('Price per platter is required'),
+    otherwise: (s) => s.required('Price per head is required')
+  }),
+  menuKind: Yup.string().oneOf(['', 'classic', 'premium', 'signature']),
+  attributes: Yup.array().of(Yup.string().max(40)).max(10, 'Up to 10 attributes'),
   chefId: Yup.string().when('menuCreatorType', {
     is: 'chef',
     then: (s) => s.required('Select the chef this menu belongs to'),
@@ -104,12 +125,44 @@ const schema = Yup.object({
   )
 });
 
+const categorySchema = Yup.object({
+  title: Yup.string().trim().required('Category name is required').max(80, 'Keep it under 80 characters'),
+  description: Yup.string().trim().required('Add a short description').max(300, 'Keep it under 300 characters'),
+  packageId: Yup.string().required('Select the package this category belongs to')
+});
+
+/** Pre-fills the menu form from a saved menu. The picture stays unless a new one is chosen. */
+const toMenuFormValues = (m: AdminMenu): MenuFormValues => ({
+  menuCreatorType: m.menuCreatorType,
+  title: m.title,
+  description: m.description,
+  serviceIds: [...m.serviceIds],
+  menuType: m.menuType ?? '',
+  menuClass: m.menuClass ?? '',
+  pricingModel: m.pricingModel ?? '',
+  menuKind: m.menuKind ?? '',
+  attributes: [...m.attributes],
+  menuCategory: m.menuCategory.map((c) => c.id),
+  pricePerHead: m.pricePerHead,
+  chefId: m.chef?.id ?? '',
+  isSignatureMenu: m.isSignatureMenu,
+  packages: m.packages.map((p) => p.id),
+  samplePicture: null,
+  groceries: m.groceries.map((g) => ({
+    groceryName: g.groceryName,
+    description: g.description ?? '',
+    unitPrice: g.unitPrice
+  }))
+});
+
 export function Menus() {
   const [menus, setMenus] = useState<AdminMenu[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
   const [menuTypeFilter, setMenuTypeFilter] = useState('all');
+  const [kindFilter, setKindFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('all');
 
   const [services, setServices] = useState<AdminService[]>([]);
   const [chefs, setChefs] = useState<Chef[]>([]);
@@ -117,6 +170,13 @@ export function Menus() {
   const [packageOptions, setPackageOptions] = useState<PackageOption[]>([]);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [editingMenu, setEditingMenu] = useState<AdminMenu | null>(null);
+  const formOpen = addOpen || Boolean(editingMenu);
+  const closeForm = () => {
+    setAddOpen(false);
+    setEditingMenu(null);
+  };
 
   const serviceNameById = (id?: string) => services.find((s) => s.id === id)?.name || '—';
 
@@ -136,6 +196,8 @@ export function Menus() {
         search,
         menuCreatorType: creatorFilter as MenuCreatorType | 'all',
         menuType: menuTypeFilter as MenuTimeSlot | 'all',
+        menuKind: kindFilter as MenuKind | 'all',
+        serviceId: serviceFilter === 'all' ? undefined : serviceFilter,
         limit: 100
       }).
       then((res) => setMenus(res.data)).
@@ -143,7 +205,7 @@ export function Menus() {
       finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timeout);
-  }, [search, creatorFilter, menuTypeFilter]);
+  }, [search, creatorFilter, menuTypeFilter, kindFilter, serviceFilter]);
 
   const columns: Column<AdminMenu>[] = [
   {
@@ -157,6 +219,7 @@ export function Menus() {
           <div>
             <p className="font-medium text-ink-950">{m.title}</p>
             <p className="max-w-sm truncate text-xs text-ink-500">{m.description}</p>
+            {m.attributes.length ? <p className="mt-0.5 text-xs text-ink-600">{m.attributes.join(' · ')}</p> : null}
           </div>
         </div>
 
@@ -171,7 +234,31 @@ export function Menus() {
         </div>
 
   },
-  { key: 'service', header: 'Service', render: (m) => serviceNameById(m.relatedServiceId) },
+  {
+    key: 'service',
+    header: 'Services',
+    render: (m) => {
+      const names = m.serviceIds.map(serviceNameById);
+      if (names.length === 0) return <span className="text-xs text-ink-400">—</span>;
+      const shown = names.slice(0, 2);
+      return (
+        <div className="flex max-w-[14rem] flex-wrap gap-1" title={names.join(', ')}>
+            {shown.map((n, i) => <Badge key={i} tone="info">{n}</Badge>)}
+            {names.length > shown.length ? <Badge tone="neutral">+{names.length - shown.length} more</Badge> : null}
+          </div>);
+
+    }
+  },
+  {
+    key: 'kind',
+    header: 'Kind',
+    render: (m) =>
+    m.menuKind ?
+    <Badge tone={m.menuKind === 'signature' ? 'brand' : m.menuKind === 'premium' ? 'info' : 'neutral'}>
+            {titleCase(m.menuKind)}
+          </Badge> :
+    <span className="text-xs text-ink-400">—</span>
+  },
   {
     key: 'type',
     header: 'Menu type',
@@ -184,9 +271,13 @@ export function Menus() {
   },
   {
     key: 'perHead',
-    header: 'Price / head',
+    header: 'Price',
     align: 'right',
-    render: (m) => <span className="font-medium">{convertToThousand(m.pricePerHead)}</span>
+    render: (m) =>
+    <span className="font-medium">
+          {convertToThousand(m.pricePerHead)}
+          <span className="ml-1 text-xs font-normal text-ink-500">{m.pricingModel === 'plater' ? '/ platter' : '/ head'}</span>
+        </span>
   },
   {
     key: 'grocery',
@@ -201,6 +292,13 @@ export function Menus() {
     render: (m) => m.isSignatureMenu ? <Badge tone="success">Yes</Badge> : <span className="text-xs text-ink-400">—</span>
   },
   {
+    key: 'actions',
+    header: '',
+    align: 'right',
+    width: '70px',
+    render: (m) => <RowActions onEdit={() => setEditingMenu(m)} />
+  },
+  {
     key: 'created',
     header: 'Created',
     render: (m) => formatDate(m.createdAt)
@@ -213,9 +311,14 @@ export function Menus() {
         title="Menus & Groceries"
         description="Build menus, itemise the grocery costing behind each one, and attach them to services and packages."
         action={
-        <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>
-            New menu
-          </Button>
+        <>
+            <Button variant="secondary" icon={<FolderPlus className="h-4 w-4" />} onClick={() => setCategoryOpen(true)}>
+              Create menu category
+            </Button>
+            <Button icon={<Plus className="h-4 w-4" />} onClick={() => setAddOpen(true)}>
+              New menu
+            </Button>
+          </>
         } />
 
 
@@ -246,36 +349,89 @@ export function Menus() {
             { value: 'dinner', label: 'Dinner' }]
             } />
 
+          <FilterSelect
+            label="Menu kind filter"
+            value={kindFilter}
+            onChange={setKindFilter}
+            options={[{ value: 'all', label: 'All kinds' }, ...MENU_KIND_OPTIONS]} />
+
+          <FilterSelect
+            label="Service filter"
+            value={serviceFilter}
+            onChange={setServiceFilter}
+            options={[{ value: 'all', label: 'All services' }, ...services.map((sv) => ({ value: sv.id, label: sv.name }))]} />
+
         </Toolbar>
         <DataTable
           columns={columns}
           rows={menus}
           rowKey={(m) => m.id}
+          onRowClick={(m) => setEditingMenu(m)}
           emptyTitle={loading ? 'Loading menus…' : 'No menus found'}
           emptyDescription={loading ? 'Fetching the menu library.' : 'Create a menu and attach its grocery list to track food cost.'} />
 
       </Card>
 
       <Modal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        title="New menu"
+        open={formOpen}
+        onClose={closeForm}
+        closeOnOverlayClick={false}
+        title={editingMenu ? `Edit ${editingMenu.title}` : 'New menu'}
         description="Courses are shown to customers; grocery costing stays internal."
         size="xl">
 
         <Formik
-          initialValues={emptyMenuForm}
+          key={editingMenu?.id ?? 'new'}
+          initialValues={editingMenu ? toMenuFormValues(editingMenu) : emptyMenuForm}
           validationSchema={schema}
           onSubmit={async (values, helpers) => {
+            if (editingMenu) {
+              try {
+                const updated = await updateMenuCore(editingMenu.id, {
+                  menuCreatorType: values.menuCreatorType,
+                  title: values.title,
+                  description: values.description,
+                  serviceIds: values.serviceIds,
+                  menuType: values.menuType as MenuTimeSlot,
+                  menuClass: values.menuClass,
+                  pricingModel: values.pricingModel,
+                  menuKind: values.menuKind,
+                  attributes: values.attributes,
+                  menuCategory: values.menuCategory,
+                  pricePerHead: Number(values.pricePerHead),
+                  chefId: values.menuCreatorType === 'chef' ? values.chefId : undefined,
+                  isSignatureMenu: values.menuCreatorType === 'chef' ? values.isSignatureMenu : false,
+                  samplePicture: values.samplePicture,
+                  packages: values.packages,
+                  groceries: values.groceries.
+                  filter((g) => g.groceryName.trim() && g.unitPrice !== '').
+                  map((g) => ({
+                    groceryName: g.groceryName.trim(),
+                    description: g.description.trim() || undefined,
+                    unitPrice: Number(g.unitPrice)
+                  }))
+                });
+                setMenus((prev) => prev.map((m) => m.id === updated.id ? updated : m));
+                toast.success(`${updated.title} updated.`);
+                closeForm();
+              } catch (err) {
+                toast.error(errorMessage(err, 'Could not save the menu.'));
+              } finally {
+                helpers.setSubmitting(false);
+              }
+              return;
+            }
             try {
               const created = await createMenuCore({
                 menuCreatorType: values.menuCreatorType,
                 title: values.title,
                 description: values.description,
-                relatedServiceId: values.relatedServiceId,
+                serviceIds: values.serviceIds,
                 menuType: values.menuType as MenuTimeSlot,
                 menuClass: values.menuClass || undefined,
                 pricingModel: values.pricingModel || undefined,
+                menuKind: values.menuKind,
+                attributes: values.attributes,
                 menuCategory: values.menuCategory,
                 pricePerHead: Number(values.pricePerHead),
                 chefId: values.menuCreatorType === 'chef' ? values.chefId : undefined,
@@ -299,7 +455,7 @@ export function Menus() {
               const finalMenu = await getAdminMenu(created.id);
               setMenus((prev) => [finalMenu, ...prev]);
               toast.success(`${finalMenu.title} created.`);
-              setAddOpen(false);
+              closeForm();
               helpers.resetForm();
             } catch (err) {
               toast.error(errorMessage(err, 'Could not create menu.'));
@@ -308,7 +464,7 @@ export function Menus() {
             }
           }}>
 
-          {({ values, isSubmitting }) =>
+          {({ values, errors, touched, submitCount, setFieldValue, setFieldTouched, isSubmitting }) =>
           <Form>
               <div className="max-h-[65vh] space-y-5 overflow-y-auto px-6 py-5">
                 <FormGrid>
@@ -320,12 +476,17 @@ export function Menus() {
                   { value: 'chef', label: 'Chef' }]
                   } />
 
-                  <SelectField
-                  name="relatedServiceId"
-                  label="Service"
-                  options={services.map((s) => ({ value: s.id, label: s.name }))} />
-
                 </FormGrid>
+
+                <ServiceCheckboxes
+                label="Services this menu belongs to"
+                services={[...services].sort((a, b) => a.name.localeCompare(b.name)).map((sv) => ({ id: sv.id, name: sv.name }))}
+                selected={values.serviceIds}
+                onChange={(ids) => {
+                  setFieldValue('serviceIds', ids);
+                  setFieldTouched('serviceIds', true, false);
+                }}
+                error={(touched.serviceIds || submitCount > 0) && typeof errors.serviceIds === 'string' ? errors.serviceIds : undefined} />
 
                 {values.menuCreatorType === 'chef' &&
               <FormGrid>
@@ -366,7 +527,8 @@ export function Menus() {
                   label="Menu class"
                   options={[
                   { value: 'nigerian', label: 'Nigerian' },
-                  { value: 'continental', label: 'Continental' }]
+                  { value: 'continental', label: 'Continental' },
+                  { value: 'intercontinental', label: 'Intercontinental' }]
                   } />
 
                 </FormGrid>
@@ -380,8 +542,23 @@ export function Menus() {
                   { value: 'plater', label: 'Per platter' }]
                   } />
 
-                  <NumberField name="pricePerHead" label="Price per head" prefix="₦" placeholder="6500" />
+                  <NumberField
+                  name="pricePerHead"
+                  label={values.pricingModel === 'plater' ? 'Price per platter' : 'Price per head'}
+                  prefix="₦"
+                  placeholder={values.pricingModel === 'plater' ? '25000' : '6500'} />
                 </FormGrid>
+
+                <SelectField
+                name="menuKind"
+                label="Menu kind (optional)"
+                options={MENU_KIND_OPTIONS} />
+
+                <MenuAttributesField
+                name="attributes"
+                label="Attributes (optional)"
+                hint="Courses or features in the order customers see them, e.g. Starter · Main · Dessert."
+                suggestions={MENU_ATTRIBUTE_SUGGESTIONS} />
 
                 <MultiSelectSearchField
                 name="menuCategory"
@@ -397,7 +574,11 @@ export function Menus() {
                 options={packageOptions.map((o) => ({ value: o.id, label: o.title }))} />
 
 
-                <ImageField name="samplePicture" label="Sample picture" hint="Shown to customers browsing this menu." />
+                <ImageField
+                name="samplePicture"
+                label="Sample picture"
+                hint={editingMenu ? 'The current picture is kept unless you choose a new one.' : 'Shown to customers browsing this menu.'}
+                previewUrl={editingMenu?.samplePicture || undefined} />
 
                 <div className="border-t border-ink-200 pt-5">
                   <FieldSectionTitle>Grocery costing</FieldSectionTitle>
@@ -457,11 +638,68 @@ export function Menus() {
                 </div>
               </div>
               <ModalFooter>
-                <Button variant="secondary" type="button" disabled={isSubmitting} onClick={() => setAddOpen(false)}>
+                <Button variant="secondary" type="button" disabled={isSubmitting} onClick={closeForm}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating…' : 'Create menu'}
+                  {isSubmitting ?
+                editingMenu ? 'Saving…' : 'Creating…' :
+                editingMenu ? 'Save changes' : 'Create menu'}
+                </Button>
+              </ModalFooter>
+            </Form>
+          }
+        </Formik>
+      </Modal>
+
+      <Modal
+        open={categoryOpen}
+        onClose={() => setCategoryOpen(false)}
+        closeOnOverlayClick={false}
+        title="Create menu category"
+        description="Categories group menus within a package. New categories can be picked straight away when creating a menu."
+        size="md">
+
+        <Formik
+          initialValues={{ title: '', description: '', packageId: '' }}
+          validationSchema={categorySchema}
+          onSubmit={async (values, helpers) => {
+            try {
+              const created = await createMenuTypeOption({
+                title: values.title.trim(),
+                description: values.description.trim(),
+                packageId: values.packageId
+              });
+              setMenuTypeOptions((prev) => [created, ...prev.filter((o) => o.id !== created.id)]);
+              toast.success(`${created.title} category created.`);
+              setCategoryOpen(false);
+            } catch (err) {
+              toast.error(errorMessage(err, 'Could not create the menu category.'));
+            } finally {
+              helpers.setSubmitting(false);
+            }
+          }}>
+
+          {({ isSubmitting }) =>
+          <Form>
+              <div className="space-y-4 px-6 py-5">
+                <TextField name="title" label="Category name" placeholder="e.g. Date Night Classics" />
+                <TextAreaField name="description" label="Description" rows={3} placeholder="What menus in this category have in common" />
+                <SelectField
+                name="packageId"
+                label="Package"
+                options={packageOptions.map((o) => ({ value: o.id, label: o.title }))} />
+
+                {packageOptions.length === 0 ?
+              <p className="text-xs text-amber-700">No packages found. Create a package first — every category belongs to one.</p> :
+              null}
+              </div>
+              <ModalFooter>
+                <Button variant="secondary" type="button" disabled={isSubmitting} onClick={() => setCategoryOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating…' : 'Create category'}
                 </Button>
               </ModalFooter>
             </Form>

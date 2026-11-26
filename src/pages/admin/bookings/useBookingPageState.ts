@@ -11,6 +11,7 @@ import {
   listBookingProcurements,
   type ProcurementRecord } from
 '../../../services/admin/procurementServices';
+import { mapInvoice, type InvoiceRecord } from '../../../services/admin/invoiceServices';
 import { ApiError } from '../../../config/api';
 
 const errorMessage = (err: unknown, fallback: string): string =>
@@ -28,6 +29,7 @@ export function useBookingPageState() {
 
   const [assignChefOpen, setAssignChefOpen] = useState(false);
   const [addProcurementOpen, setAddProcurementOpen] = useState(false);
+  const [addInvoiceOpen, setAddInvoiceOpen] = useState(false);
   const [addCommentOpen, setAddCommentOpen] = useState(false);
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
 
@@ -35,7 +37,7 @@ export function useBookingPageState() {
     if (!id) return;
     setLoading(true);
     getBookingDetail(id).
-    then((res) => setBooking(res.payload)).
+    then((res) => setBooking({ ...res.payload, invoices: (res.payload.invoices ?? []).map(mapInvoice) })).
     catch((err) => toast.error(errorMessage(err, 'Could not load this booking.'))).
     finally(() => setLoading(false));
   }, [id]);
@@ -79,6 +81,14 @@ export function useBookingPageState() {
     setProcurementRecords((prev) => [record, ...prev]);
   };
 
+  const handleInvoiceCreated = (record: InvoiceRecord) => {
+    setBooking((prev) => prev ? { ...prev, invoices: [record, ...(prev.invoices ?? [])] } : prev);
+  };
+
+  const handleInvoiceDeleted = (invoiceId: string) => {
+    setBooking((prev) => prev ? { ...prev, invoices: (prev.invoices ?? []).filter((i) => i.id !== invoiceId) } : prev);
+  };
+
   const handleProcurementDeleted = (procurementId: string) => {
     setProcurementRecords((prev) => prev.filter((r) => r.id !== procurementId));
   };
@@ -107,6 +117,10 @@ export function useBookingPageState() {
     setAssignChefOpen,
     addProcurementOpen,
     setAddProcurementOpen,
+    addInvoiceOpen,
+    setAddInvoiceOpen,
+    handleInvoiceCreated,
+    handleInvoiceDeleted,
     addCommentOpen,
     setAddCommentOpen,
     addPaymentOpen,

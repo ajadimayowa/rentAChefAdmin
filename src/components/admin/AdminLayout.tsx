@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Package as PackageIcon,
   ScrollText,
+  Settings,
   ShieldCheck,
   Tags,
   Users,
@@ -89,6 +90,12 @@ const navGroups: {title: string;items: NavItem[];}[] = [
   // { to: '/admin/charges', label: 'Charges & Pricing', icon: <Coins className="h-4 w-4" /> },
   { to: '/admin/chef-pricing', label: 'Chef Level Pricing', icon: <Layers className="h-4 w-4" /> },
   { to: '/admin/terms', label: 'Terms & Conditions', icon: <ScrollText className="h-4 w-4" /> }]
+
+},
+{
+  title: 'System',
+  items: [
+  { to: '/admin/settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> }]
 
 }];
 

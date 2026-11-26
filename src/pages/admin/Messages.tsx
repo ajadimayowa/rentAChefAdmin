@@ -81,6 +81,9 @@ export function Messages() {
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
   // ---------- inbox ----------
+  // The inbox is polled, so a failing request would toast every few seconds.
+  // Show the error once and stay quiet until a load succeeds again.
+  const inboxErrorShown = useRef(false);
   const loadInbox = useCallback(async () => {
     try {
       const list = await listConversations({
@@ -88,8 +91,12 @@ export function Messages() {
         search: search.trim() || undefined
       });
       setConversations(list);
+      inboxErrorShown.current = false;
     } catch (err) {
-      toast.error(errorMessage(err, 'Could not load conversations.'));
+      if (!inboxErrorShown.current) {
+        inboxErrorShown.current = true;
+        toast.error(errorMessage(err, 'Could not load conversations.'), { id: 'inbox-load-error' });
+      }
     } finally {
       setInboxLoading(false);
     }

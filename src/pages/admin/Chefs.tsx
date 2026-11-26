@@ -66,7 +66,7 @@ const schema = Yup.object({
   bio: Yup.string().required('Add a short bio'),
   specialties: Yup.array().of(Yup.string()).min(1, 'Add at least one specialty'),
   servicesOffered: Yup.array().of(Yup.string()).min(1, 'Select at least one service'),
-  avatarFile: Yup.mixed<File>().test(
+  avatarFile: Yup.mixed<File>().nullable().test(
     'required-photo',
     'Add a chef photo',
     function (value) {

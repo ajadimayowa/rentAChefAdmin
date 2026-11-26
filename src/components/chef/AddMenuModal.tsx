@@ -52,7 +52,7 @@ const menuSchema = Yup.object({
   title: Yup.string().required('Menu title is required'),
   description: Yup.string().required('Add a short description'),
   menuType: Yup.string().oneOf(['breakfast', 'lunch', 'dinner']).required('Select when this menu is served'),
-  menuClass: Yup.string().oneOf(['nigerian', 'continental']),
+  menuClass: Yup.string().oneOf(['nigerian', 'continental', 'intercontinental']),
   pricingModel: Yup.string().oneOf(['perhead', 'plater']),
   relatedServiceId: Yup.string().required('Select the service this menu belongs to'),
   pricePerHead: Yup.number().
@@ -168,7 +168,8 @@ export function AddMenuModal({
                     label="Cuisine class"
                     options={[
                     { value: 'nigerian', label: 'Nigerian' },
-                    { value: 'continental', label: 'Continental' }]
+                    { value: 'continental', label: 'Continental' },
+                    { value: 'intercontinental', label: 'Intercontinental' }]
                     } />
 
                 </FormGrid>

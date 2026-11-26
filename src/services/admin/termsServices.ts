@@ -2,6 +2,8 @@ import { api, type ApiItemResponse, type ApiListResponse, type ApiMessageRespons
 
 export interface ServiceTerm {
   id: string;
+  /** Older clauses may have no title — '' then. */
+  title: string;
   description: string;
   termsUrl?: string;
   serviceId: string;
@@ -11,6 +13,7 @@ export interface ServiceTerm {
 
 interface RawServiceTerm {
   id: string;
+  title?: string;
   description: string;
   termsUrl?: string;
   serviceId?: { id: string; name: string } | string;
@@ -22,6 +25,7 @@ function mapServiceTerm(raw: RawServiceTerm): ServiceTerm {
   const serviceId = typeof raw.serviceId === 'object' && raw.serviceId !== null ? raw.serviceId.id : raw.serviceId ?? '';
   return {
     id: raw.id,
+    title: raw.title ?? '',
     description: raw.description ?? '',
     termsUrl: raw.termsUrl || undefined,
     serviceId,
@@ -37,13 +41,19 @@ export async function listServiceTerms(serviceId: string): Promise<ApiListRespon
   return { success: res.success, message: '', payload: res.payload.map(mapServiceTerm) };
 }
 
+export interface ServiceTermInput {
+  title: string;
+  description: string;
+  termsUrl?: string;
+}
+
 export async function createServiceTerm(
 serviceId: string,
-description: string,
-termsUrl?: string)
+{ title, description, termsUrl }: ServiceTermInput)
 : Promise<ApiItemResponse<ServiceTerm>> {
   const res = await api.post<{success: boolean;payload: RawServiceTerm;}>('/terms-and-con/create', {
     serviceId,
+    title,
     description,
     termsUrl: termsUrl || ''
   });
@@ -52,10 +62,10 @@ termsUrl?: string)
 
 export async function updateServiceTerm(
 id: string,
-description: string,
-termsUrl?: string)
+{ title, description, termsUrl }: ServiceTermInput)
 : Promise<ApiItemResponse<ServiceTerm>> {
   const res = await api.put<{success: boolean;payload: RawServiceTerm;}>(`/terms-and-con/${id}`, {
+    title,
     description,
     termsUrl: termsUrl || ''
   });
@@ -81,6 +91,7 @@ interface RawTermsAndConTarget {
 
 interface RawTermsAndCon {
   id: string;
+  title?: string;
   description: string;
   termsUrl?: string;
   serviceId?: RawTermsAndConTarget | string | null;
@@ -92,6 +103,8 @@ interface RawTermsAndCon {
 
 export interface TermsAndConRecord {
   id: string;
+  /** Older clauses may have no title — '' then. */
+  title: string;
   description: string;
   termsUrl?: string;
   targetType: TermsTargetType | null;
@@ -110,6 +123,7 @@ function mapTermsAndCon(raw: RawTermsAndCon): TermsAndConRecord {
     if (!ref) return null;
     return {
       id: raw.id,
+      title: raw.title ?? '',
       description: raw.description ?? '',
       termsUrl: raw.termsUrl || undefined,
       targetType: type,
@@ -125,6 +139,7 @@ function mapTermsAndCon(raw: RawTermsAndCon): TermsAndConRecord {
     target(raw.categoryId, 'category', 'name') ??
     target(raw.specialMenuId, 'specialMenu', 'title') ?? {
       id: raw.id,
+      title: raw.title ?? '',
       description: raw.description ?? '',
       termsUrl: raw.termsUrl || undefined,
       targetType: null,
@@ -173,6 +188,7 @@ export async function listTermsAndCons(params?: TermsAndConListParams): Promise<
 }
 
 export interface TermsAndConInput {
+  title: string;
   description: string;
   termsUrl?: string;
   serviceId?: string | null;

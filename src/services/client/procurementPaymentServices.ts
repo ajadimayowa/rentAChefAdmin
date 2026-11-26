@@ -38,3 +38,9 @@ reference: string)
   });
   return res.payload;
 }
+
+/** Backend verifies the Paystack reference and marks the invoice paid; returns the booking's invoices. */
+export async function confirmInvoicePayment(invoiceId: string, reference: string): Promise<unknown[]> {
+  const res = await api.post<{success: boolean;payload: unknown[];}>(`/invoices/${invoiceId}/pay`, { paymentReference: reference });
+  return res.payload;
+}

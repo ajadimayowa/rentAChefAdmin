@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Form, Formik } from 'formik';
 import * as Yup from 'yup';
 import { ImageOff, Plus, ShoppingBag, UploadCloud, UtensilsCrossed } from 'lucide-react';
@@ -102,6 +102,18 @@ export function Services() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [editing, setEditing] = useState<ServiceFormValues | null>(null);
+  // Set when the edit form was opened from a service's own page (?edit=<id>),
+  // so saving or cancelling returns there.
+  const [returnToId, setReturnToId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const closeEditor = () => {
+    setEditing(null);
+    if (returnToId) {
+      const id = returnToId;
+      setReturnToId(null);
+      navigate(`/admin/services/${id}`);
+    }
+  };
   // Delete option disabled — see RowActions/ConfirmDialog below.
   // const [deleting, setDeleting] = useState<AdminService | null>(null);
 
@@ -166,6 +178,23 @@ export function Services() {
     ),
     [services, search]
   );
+
+  // Open the edit form for ?edit=<id> once the services have loaded.
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (!editId || loading) return;
+    const service = services.find((s) => s.id === editId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('edit');
+    setSearchParams(next, { replace: true });
+    if (service) {
+      setEditing(toFormValues(service));
+      setReturnToId(service.id);
+    } else {
+      toast.error('That service could not be found.');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, loading, services]);
 
   const columns: Column<AdminService>[] = [
   {
@@ -297,7 +326,7 @@ export function Services() {
 
       <Modal
         open={Boolean(editing)}
-        onClose={() => setEditing(null)}
+        onClose={closeEditor}
         title={editing?.id ? 'Edit service' : 'New service'}
         description="Pricing rules and menus are attached to services once they're created."
         size="lg">
@@ -313,7 +342,7 @@ export function Services() {
               await createService(values, categoryNamesById);
               upsert(res.payload);
               toast.success(values.id ? 'Service updated.' : `${res.payload.name} created.`);
-              setEditing(null);
+              closeEditor();
             } catch (err) {
               toast.error(errorMessage(err, 'Could not save service.'));
             } finally {
@@ -419,7 +448,7 @@ export function Services() {
                 variant="secondary"
                 type="button"
                 disabled={isSubmitting}
-                onClick={() => setEditing(null)}>
+                onClick={closeEditor}>
 
                     Cancel
                   </Button>

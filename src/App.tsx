@@ -51,6 +51,12 @@ import { SpecialServiceBookingPage } from './pages/admin/bookings/SpecialService
 import { HomeResidenceBookingPage } from './pages/admin/bookings/HomeResidenceBookingPage';
 import { GeneralBookingPage } from './pages/admin/bookings/GeneralBookingPage';
 import { Charges } from './pages/admin/Charges';
+import { SettingsPage } from './pages/admin/settings/SettingsPage';
+import { FeesPage } from './pages/admin/settings/FeesPage';
+import { LogisticsPage } from './pages/admin/settings/LogisticsPage';
+import { NotificationsPage } from './pages/admin/settings/NotificationsPage';
+import { ServiceRatesPage } from './pages/admin/settings/ServiceRatesPage';
+import { EventTypesPage, ProteinOptionsPage } from './pages/admin/settings/CatalogueSettingsPage';
 import { ChefTierPricing } from './pages/admin/ChefTierPricing';
 import { Messages } from './pages/admin/Messages';
 import { TermsAndConditions } from './pages/admin/TermsAndConditions';
@@ -126,6 +132,13 @@ export function App() {
             <Route path="chef-pricing" element={<ChefTierPricing />} />
             <Route path="terms" element={<TermsAndConditions />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings/fees" element={<FeesPage />} />
+            <Route path="settings/logistics" element={<LogisticsPage />} />
+            <Route path="settings/notifications" element={<NotificationsPage />} />
+            <Route path="settings/service-rates" element={<ServiceRatesPage />} />
+            <Route path="settings/event-types" element={<EventTypesPage />} />
+            <Route path="settings/protein-options" element={<ProteinOptionsPage />} />
           </Route>
 
           <Route
